@@ -1,0 +1,156 @@
+<?php
+/**
+ * @file
+ *  <p>Install hooks for the "Sample Development UI" feature.</p>
+ * 
+ *  <p>© 2015 Red Bottle Design, LLC. All rights reserved.</p>
+ *  
+ * @author Guy Paddock (guy.paddock@redbottledesign.com)
+ */
+
+/**
+ * Constant for the name of this module.
+ * 
+ * @var string
+ */
+define('SADE_MODULE_NAME', 'sample_devel');
+
+/**
+ * Implementation of <code>hook_install()</code>.
+ */
+function sample_devel_install() {
+  _sample_devel_initialize_shortcut_sets();
+}
+
+/**
+ * Implementation of <code>hook_site_post_install()</code>.
+ */
+function sample_devel_site_post_install() {
+  _sample_devel_set_site_name();
+  _sample_devel_set_admin_password();
+}
+
+/**
+ * Initializes developer-friendly shortcut sets.
+ */
+function _sample_devel_initialize_shortcut_sets() {
+  watchdog(
+    SADE_MODULE_NAME,
+    'Creating "Developer" shortcut set.',
+    array(),
+    WATCHDOG_INFO);
+
+  $shortcut_set           = new stdClass();
+  $shortcut_set->title    = 'Developer';
+  $shortcut_set->set_name = 'developer-set';
+  $shortcut_set->links    = array(
+    array(
+      'link_title'  => 'Add content',
+      'link_path'   => 'node/add',
+      'weight'      => 0,
+    ),
+
+    array(
+      'link_title'  => 'Content types',
+      'link_path'   => 'admin/structure/types',
+      'weight'      => 1,
+    ),
+
+    array(
+      'link_title'  => 'Taxonomy',
+      'link_path'   => 'admin/structure/taxonomy',
+      'weight'      => 2,
+    ),
+
+    array(
+      'link_title'  => 'Performance',
+      'link_path'   => 'admin/config/development/performance',
+      'weight'      => 4,
+    ),
+
+    array(
+      'link_title'  => 'Features',
+      'link_path'   => 'admin/structure/features',
+      'weight'      => 5,
+    ),
+
+    array(
+      'link_title'  => 'Rules',
+      'link_path'   => 'admin/config/workflow/rules',
+      'weight'      => 6,
+    ),
+  );
+
+  shortcut_set_save($shortcut_set);
+
+  watchdog(
+    SADE_MODULE_NAME,
+    '"Developer" shortcut set created.',
+    array(),
+    WATCHDOG_INFO);
+
+  // Assign admin to the developer shortcut set.
+  shortcut_set_assign_user($shortcut_set, user_load(1));
+}
+
+/**
+ * Sets the admin password to a known value, for friendly development.
+ */
+function _sample_devel_set_admin_password() {
+  watchdog(
+    SADE_MODULE_NAME,
+    "Setting admin password to 'abc123'.",
+    array(),
+    WATCHDOG_DEBUG);
+
+  $user  = user_load(1);
+
+  $edits = array(
+    'field_user_full_name'  => 'Administrator',
+    'pass'                  => 'abc123',
+  );
+
+  // Set the admin password to a known value
+  user_save($user, $edits);
+}
+
+/**
+ * Sets the site name to something more friendly than the domain name.
+ */
+function _sample_devel_set_site_name() {
+  $build_number = _sample_devel_get_site_build_number();
+
+  if (empty($$build_number)) {
+    $title_suffix = ' - Build #' . $build_number;
+  }
+  else {
+    $title_suffix = '';
+  }
+
+  variable_set('site_name', "Sample Dev" . $title_suffix);
+}
+
+/**
+ * <p>Extracts the CI build number from the URL of the site (if applicable) and
+ * returns it.</p>
+ *
+ * <p>This method depends entirely on the site URL being set properly during
+ * install.</p>
+ *
+ * @return
+ *  Either the CI build number, or {@code NULL} if this site is not being
+ *  installed by a CI build.
+ */
+function _sample_devel_get_site_build_number() {
+  $site_url     = url("<front>", array("absolute" => TRUE));
+  $url_matches  = preg_match('/^http(s)?:\/\/build\-([0-9]+)\..+\.com\/$/', $site_url, $matches);
+
+  if ($url_matches && count($matches) > 2) {
+    $build_number = $matches[2];
+  }
+  else {
+    $build_number = NULL;
+  }
+
+  return $build_number;
+}

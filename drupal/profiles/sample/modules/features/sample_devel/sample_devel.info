@@ -1,0 +1,16 @@
+name = Sample Development UI
+description = Provides a better experience for developers working on this platform. (Do not enable on production sites)
+core = 7.x
+package = Sample
+version = 7.x-1.0-sprint1
+project = sample_devel
+dependencies[] = devel
+dependencies[] = ds
+dependencies[] = ds_ui
+dependencies[] = forminspect
+dependencies[] = fpa
+dependencies[] = migrate_ui
+dependencies[] = module_filter
+dependencies[] = rules_admin
+dependencies[] = views_ui
+features[features_api][] = api:2

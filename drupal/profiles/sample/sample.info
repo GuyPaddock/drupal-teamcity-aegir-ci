@@ -1,0 +1,145 @@
+name = Sample
+description = Provides a marketplace for homeowners to find qualified contractors for renovation projects.
+version = 7.x-1.0-sprint1
+core = 7.x
+distribution_name = Sample
+exclusive = 1
+
+dependencies[] = block
+dependencies[] = color
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = dblog
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = overlay
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+
+; == Installation Profile Features
+
+; == Features for Development (DISABLE FOR RELEASE)
+dependencies[] = sample_devel
+
+; == Modules for API
+dependencies[] = entity
+dependencies[] = libraries
+dependencies[] = token
+
+; == Modules for Site Structure
+; dependencies[] = standard_content_setup   ; Optional
+dependencies[] = features
+dependencies[] = views
+; dependencies[] = basic_image_setup        ; Optional
+
+; == Modules for SEO
+dependencies[] = xmlsitemap
+
+; == Modules for Permission Management
+; dependencies[] = administration_support   ; Optional
+
+; == Modules for Usability
+dependencies[] = diff
+; dependencies[] = markdown_text_formatting ; Optional
+dependencies[] = media
+
+; == Profiler settings
+
+; Theme settings
+theme = bartik
+
+variables[admin_theme] = seven
+variables[node_admin_theme] = 1
+
+; Enable user pictures
+variables[user_pictures] = 1
+variables[user_picture_dimensions] = '1024x1024'
+variables[user_picture_file_size] = 800
+variables[user_picture_style] = thumbnail
+
+; Allow visitor account creation.
+variables[user_register] = 1
+
+; Set-up public-facing blocks
+;blocks[public_node_main][module] = system
+;blocks[public_node_main][delta] = main
+;blocks[public_node_main][theme] = bartik
+;blocks[public_node_main][status] = 1
+;blocks[public_node_main][weight] = 0
+;blocks[public_node_main][region] = content
+;blocks[public_node_main][visibility] = 0
+;blocks[public_node_main][pages] = ''
+;blocks[public_node_main][cache] = -1
+
+;blocks[public_help][module] = system
+;blocks[public_help][delta] = help
+;blocks[public_help][theme] = bartik
+;blocks[public_help][status] = 1
+;blocks[public_help][weight] = 0
+;blocks[public_help][region] = help
+;blocks[public_help][visibility] = 0
+;blocks[public_help][pages] = ''
+;blocks[public_help][cache] = -1
+
+;; Homepage blocks
+
+; Set-up admin-facing blocks
+blocks[admin_node_recent][module] = node
+blocks[admin_node_recent][delta] = recent
+blocks[admin_node_recent][theme] = seven
+blocks[admin_node_recent][status] = 1
+blocks[admin_node_recent][weight] = 10
+blocks[admin_node_recent][region] = dashboard_main
+blocks[admin_node_recent][visibility] = 0
+blocks[admin_node_recent][pages] = ''
+blocks[admin_node_recent][cache] = -1
+
+blocks[admin_main_content][module] = system
+blocks[admin_main_content][delta] = main
+blocks[admin_main_content][theme] = seven
+blocks[admin_main_content][status] = 1
+blocks[admin_main_content][weight] = 0
+blocks[admin_main_content][region] = content
+blocks[admin_main_content][visibility] = 0
+blocks[admin_main_content][pages] = ''
+blocks[admin_main_content][cache] = -1
+
+blocks[admin_help][module] = system
+blocks[admin_help][delta] = help
+blocks[admin_help][theme] = seven
+blocks[admin_help][status] = 1
+blocks[admin_help][weight] = 0
+blocks[admin_help][region] = help
+blocks[admin_help][visibility] = 0
+blocks[admin_help][pages] = ''
+blocks[admin_help][cache] = -1
+
+blocks[admin_user_login][module] = user
+blocks[admin_user_login][delta] = login
+blocks[admin_user_login][theme] = seven
+blocks[admin_user_login][status] = 1
+blocks[admin_user_login][weight] = 10
+blocks[admin_user_login][region] = content
+blocks[admin_user_login][visibility] = 0
+blocks[admin_user_login][pages] = ''
+blocks[admin_user_login][cache] = -1
+
+blocks[admin_user_new][module] = user
+blocks[admin_user_new][delta] = new
+blocks[admin_user_new][theme] = seven
+blocks[admin_user_new][status] = 1
+blocks[admin_user_new][weight] = 0
+blocks[admin_user_new][region] = dashboard_sidebar
+blocks[admin_user_new][visibility] = 0
+blocks[admin_user_new][pages] = ''
+blocks[admin_user_new][cache] = -1

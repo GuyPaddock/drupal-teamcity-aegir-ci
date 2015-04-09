@@ -11,6 +11,7 @@ https://www.youtube.com/watch?v=oBdVFyRifc4
 - **teamcity/sudoers.d/teamcity**: A sudoers file for TeamCity to be able to kick-off Drush tasks as the `aegir` user.
 - **teamcity/init.d/teamcity-agent**: An init script for starting the TeamCity agent at system boot.
 - **teamcity/build-types/drupal_ci.xml**: A complete TeamCity project template for setting-up new Drupal CI projects in TeamCity in minutes.
+- **drupal/profiles/sample**: A sample installation profile you can use as a base for new Drupal CI projects.
 
 ## Background
 Not many things are as important to an agile development team as continuous integration—the concept of merging-in and testing fresh code from developers as soon as the code has been checked in, to catch defects and head off barriers to the team as soon as possible.
