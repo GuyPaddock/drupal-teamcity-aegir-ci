@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE template SYSTEM "../../../project-config.dtd">
+
+<template>
+  <name>Drupal CI</name>
+  <settings>
+    <options>
+      <option name="artifactRules" value="/var/aegir/platforms/%project.platform.prefix%_b%build.number% =&gt; %project.platform.prefix%_b%build.number%_platform.zip" />
+    </options>
+    <parameters>
+      <param name="project.internal_name" value="UNSET" />
+      <param name="project.platform.install_profile" value="UNSET" />
+      <param name="project.platform.makefile" value="%system.teamcity.build.checkoutDir%/build-%project.platform.install_profile%.make" />
+      <param name="project.platform.prefix" value="%project.internal_name%_%project.platform.version.core%" />
+      <param name="project.platform.version.core" value="7x" />
+      <param name="project.site.email" value="UNSET" />
+      <param name="project.site.root_domain" value="hal.redbottledesign.com" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_7" name="Assemble installation profile platform and register it with Aegir" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[#!/bin/bash
+# Stop on error
+set -e
+
+# Verbose
+set -x
+
+DRUSH_CMD='sudo -u aegir /usr/bin/drush --verbose --debug'
+
+PLATFORM_NAME='%project.platform.prefix%_b%build.number%'
+PLATFORM_ALIAS="@platform_${PLATFORM_NAME}"
+
+PLATFORM_MAKEFILE='%project.platform.makefile%'
+
+$DRUSH_CMD --root="/var/aegir/platforms/${PLATFORM_NAME}/" provision-save ${PLATFORM_ALIAS} --context_type='platform' --makefile=$PLATFORM_MAKEFILE;
+echo;
+echo;
+
+$DRUSH_CMD ${PLATFORM_ALIAS} provision-verify;
+echo;
+echo;
+
+$DRUSH_CMD @hostmaster hosting-import ${PLATFORM_ALIAS};
+echo;
+echo;
+
+$DRUSH_CMD @hostmaster hosting-task ${PLATFORM_ALIAS} verify --force;
+echo;
+echo;]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_10" name="Install new site on platform in Aegir" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[#!/bin/bash
+# Stop on error
+set -e
+
+# Verbose
+set -x
+
+DRUSH_CMD='sudo -u aegir /usr/bin/drush --verbose --debug'
+
+PLATFORM_NAME='%project.platform.prefix%_b%build.number%'
+PLATFORM_ALIAS="@platform_${PLATFORM_NAME}"
+
+PLATFORM_PROFILE='%project.platform.install_profile%'
+
+SITE_URI='build-%build.number%.ci.%project.internal_name%.%project.site.root_domain%'
+SITE_ALIAS="@${SITE_URI}"
+SITE_EMAIL='%project.site.email%'
+
+$DRUSH_CMD provision-save ${SITE_ALIAS} --context_type=site --uri="${SITE_URI}" --platform="${PLATFORM_ALIAS}" --server=@server_master --db_server=@server_localhost --profile="${PLATFORM_PROFILE}" --client_name=teamcity;
+echo;
+echo;
+
+$DRUSH_CMD ${SITE_ALIAS} provision-install --client_email="${SITE_EMAIL}";
+echo;
+echo;]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_11" name="Import new site into Aegir front-end" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[#!/bin/bash
+# Stop on error
+set -e
+
+# Verbose
+set -x
+
+DRUSH_CMD='sudo -u aegir /usr/bin/drush --verbose --debug'
+
+PLATFORM_NAME='%project.platform.prefix%_b%build.number%'
+PLATFORM_ALIAS="@platform_${PLATFORM_NAME}"
+
+SITE_URI='build-%build.number%.ci.%project.internal_name%.%project.site.root_domain%'
+SITE_ALIAS="@${SITE_URI}"
+
+$DRUSH_CMD @hostmaster hosting-task ${PLATFORM_ALIAS} verify --force;
+echo;
+echo;
+
+$DRUSH_CMD @hostmaster hosting-task ${SITE_ALIAS} import --force;
+echo;
+echo;]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_12" name="Set-up first-time log-in link in Aegir front-end for convenience" type="simpleRunner">
+        <parameters>
+          <param name="script.content"><![CDATA[#!/bin/bash
+# Stop on error
+set -e
+
+# Verbose
+set -x
+
+DRUSH_CMD='sudo -u aegir /usr/bin/drush --verbose --debug'
+
+SITE_URI='build-%build.number%.ci.%project.internal_name%.%project.site.root_domain%'
+SITE_ALIAS="@${SITE_URI}"
+
+$DRUSH_CMD @hostmaster hosting-task ${SITE_ALIAS} login-reset --force;
+echo;
+echo;]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings />
+    <requirements>
+      <equals name="agent.aegir.version" value="6.x-2.1" />
+    </requirements>
+    <build-triggers>
+      <build-trigger id="vcsTrigger" type="vcsTrigger">
+        <parameters>
+          <param name="quietPeriodMode" value="DO_NOT_USE" />
+        </parameters>
+      </build-trigger>
+    </build-triggers>
+    <cleanup />
+  </settings>
+</template>

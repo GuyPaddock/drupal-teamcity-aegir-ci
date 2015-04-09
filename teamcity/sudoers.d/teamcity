@@ -1,0 +1,8 @@
+# GAP on 2014-07-19: Allow TeamCity to run jobs headless.
+Defaults:teamcity !requiretty
+
+# GAP on 2014-07-19: Make sure that the home folder is correct for the target user.
+Defaults:teamcity always_set_home
+
+# GAP on 2014-07-19: Ensure that TeamCity can invoke Drush as Aegir.
+teamcity ALL=(aegir)NOPASSWD: /usr/bin/drush
