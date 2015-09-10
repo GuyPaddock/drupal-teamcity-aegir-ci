@@ -33,10 +33,10 @@ https://www.jetbrains.com/teamcity/download/
   - Register script to start at boot with `sudo update-rc.d teamcity-server defaults 98 02`.
   - Install Authbind to allow TeamCity to listen on port 80 without being root:
 
-        sudo apt-get install authbind
-        sudo touch /etc/authbind/byport/80
-        sudo chown teamcity /etc/authbind/byport/80
-        sudo chmod 755 /etc/authbind/byport/80
+            sudo apt-get install authbind
+            sudo touch /etc/authbind/byport/80
+            sudo chown teamcity /etc/authbind/byport/80
+            sudo chmod 755 /etc/authbind/byport/80
 
   - Modify `/opt/teamcity/conf/server.xml` and change Connector port from 8111 to 80 (see: https://confluence.jetbrains.com/display/TCD9/Installing+and+Configuring+the+TeamCity+Server#InstallingandConfiguringtheTeamCityServer-ChangingServerPort)
 
