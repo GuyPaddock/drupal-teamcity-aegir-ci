@@ -38,7 +38,7 @@ https://www.jetbrains.com/teamcity/download/
             sudo chown teamcity /etc/authbind/byport/80
             sudo chmod 755 /etc/authbind/byport/80
 
-  - Modify `/opt/teamcity/conf/server.xml` and change Connector port from 8111 to 80 (see: https://confluence.jetbrains.com/display/TCD9/Installing+and+Configuring+the+TeamCity+Server#InstallingandConfiguringtheTeamCityServer-ChangingServerPort)
+  - Modify `/opt/teamcity/conf/server.xml` and change Connector port from `8111` to `80` (see: https://confluence.jetbrains.com/display/TCD9/Installing+and+Configuring+the+TeamCity+Server#InstallingandConfiguringtheTeamCityServer-ChangingServerPort)
 
 9. *[On Build Agent and CI Server]* Set password for teamcity user account.
 
