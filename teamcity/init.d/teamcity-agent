@@ -26,7 +26,7 @@ case "$1" in
     $0 start;
     ;;
   *)
-    echo "Usage: /etc/init.d/teamcity {start|stop|restart}";
+    echo "Usage:" $0 "{start|stop|restart}";
     exit 1;
     ;;
 esac;
