@@ -1,6 +1,6 @@
 NOTES:
-  TeamCity CI server can be either a Windows or Linux host without causing any problems.
-  The build agent must be Ubuntu Linux for best results.
+  - TeamCity CI server can be either a Windows or Linux host without causing any problems.
+  - The build agent must be Ubuntu Linux for best results.
 
 Steps to install Aegir + TeamCity (Roughly in the same order as the video)
 ==========================================================================
