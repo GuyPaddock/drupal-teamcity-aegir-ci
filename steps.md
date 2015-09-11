@@ -42,33 +42,41 @@ https://www.jetbrains.com/teamcity/download/
 
 9. *[On Build Agent and CI Server]* Set password for teamcity user account.
 
-10. *[On CI Server]* Install version control (git, mercurial, etc).
+10. *[On Build Agent]* Add the `teamcity` user to the `aegir` group so that
+     creation of build artifacts does not fail when encountering `drushrc.php`
+     files protected by Aegir:
+     
+            sudo usermod -G aegir -a teamcity
 
-11. *[On Build Agent]* Install TeamCity agent (use Agent Push feature from CI Server for best results).
+11. *[On CI Server]* Install version control (git, mercurial, etc).
 
-12. *[On Build Agent]* Set-up TeamCity sudoers -- see "teamcity/sudoers.d/teamcity".
+12. *[On Build Agent]* Install TeamCity agent (use Agent Push feature from CI Server for best results).
 
-13. *[On Build Agent]* Add Aegir version to buildAgent.properties (see: https://confluence.jetbrains.com/display/TCD9/Build+Agent+Configuration):
+13. *[On Build Agent]* Install sudoers file for TeamCity to be able to run commands as Aegir -- see `teamcity/sudoers.d/teamcity`.
+
+14. *[On Build Agent]* Add Aegir version to buildAgent.properties (see: https://confluence.jetbrains.com/display/TCD9/Build+Agent+Configuration):
 
         agent.aegir.version=6.x-2.1
 
-14. *[On Build Agent]* Add an init script to start the TeamCity Agent at boot:
+15. *[On Build Agent]* Add an init script to start the TeamCity Agent at boot:
   - Add init script (`/etc/init.d/teamcity-agent`) and `chmod 755` it (see sample `teamcity/init.d/teamcity-agent` in my repo).
   - Register script to start at boot with `sudo update-rc.d teamcity-agent defaults 98 02`.
 
-15. *[On Build Agent]* Start agent.
+16. *[On Build Agent]* Start agent.
 
-16. *[On CI Server]* Add TeamCity CI profile (`drupal_ci.xml` under `/opt/teamcity/.BuildServer/config/projects/_Root/buildTypes`;  see `teamcity/build-types/drupal_ci.xml` in my repo).
+17. *[On CI Server]* Add TeamCity CI profile (`drupal_ci.xml` under `/opt/teamcity/.BuildServer/config/projects/_Root/buildTypes`;  see `teamcity/build-types/drupal_ci.xml` in my repo). All you need to do is drop the file in that folder. It will then appear as a new template under Administration -&gt; Projects -&gt; &lt;Root project&gt; -&gt; Build Configuration Templates.
 
-17. *[On CI Server]* Set-up CI build template (change host name and e-mail address as appropriate for your environment).
+18. *[On CI Server]* Set-up CI build template (change host name, identified as `project.site.root_domain`; and e-mail address, identified as `project.site.email`, as appropriate for your environment).
 
-18. *[On CI Server]* Set-up your first project.
+19. *[On CI Server]* Set-up your first project (Administration -&gt; Projects -&gt; Create Project) with a build configuration that uses the Drupal CI template. Be sure to fill-in any `UNSET` fields with appropriate values for the profile you are installing.
 
-19. *[On CI Server]* Set the TeamCity Branch spec to `+:*` if you want builds when there are commits on any branch.
+20. *[On CI Server]* Configure VCS roots for the new build configuration. Ensure that the file `build-PROFILE_NAME.make` will be checked-out in the root of the check-out folder. For example, the "checkout pattern" for the sample profile in this repro is `+:drupal/profiles/sample => .`, assuming the VCS root is set to the root of this repo (`https://github.com/GuyPaddock/drupal-teamcity-aegir-ci`).
 
-20. *[On Build Agent]* Install Drush make local (Make sure to run the last command to clear the drush cache!):
+21. *[On CI Server]* Set the TeamCity Branch spec to `+:*` if you want builds when there are commits on any branch.
+
+22. *[On Build Agent]* Install Drush make local (Make sure to run the last command to clear the drush cache!):
 
         git clone https://github.com/helior/make_local.git /usr/share/drush/commands/make_local
         drush cc drush
 
-21. *[On CI Server]* Run your first build!
+23. *[On CI Server]* Run your first build!
