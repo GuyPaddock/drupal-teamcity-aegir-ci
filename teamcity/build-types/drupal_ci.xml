@@ -141,7 +141,7 @@ echo;]]></param>
     </build-runners>
     <vcs-settings />
     <requirements>
-      <equals name="agent.aegir.version" value="6.x-2.1" />
+      <equals name="agent.aegir.version" value="6.x-2.5" />
     </requirements>
     <build-triggers>
       <build-trigger id="vcsTrigger" type="vcsTrigger">

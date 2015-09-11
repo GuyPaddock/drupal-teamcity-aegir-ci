@@ -54,9 +54,9 @@ https://www.jetbrains.com/teamcity/download/
 
 13. *[On Build Agent]* Install sudoers file for TeamCity to be able to run commands as Aegir -- see `teamcity/sudoers.d/teamcity`.
 
-14. *[On Build Agent]* Add Aegir version to buildAgent.properties (see: https://confluence.jetbrains.com/display/TCD9/Build+Agent+Configuration):
+14. *[On Build Agent]* Add Aegir version to buildAgent.properties to ensure that only Aegir agents run Drupal builds (see: https://confluence.jetbrains.com/display/TCD9/Build+Agent+Configuration):
 
-        agent.aegir.version=6.x-2.1
+        agent.aegir.version=6.x-2.5
 
 15. *[On Build Agent]* Add an init script to start the TeamCity Agent at boot:
   - Add init script (`/etc/init.d/teamcity-agent`) and `chmod 755` it (see sample `teamcity/init.d/teamcity-agent` in my repo).
