@@ -42,11 +42,11 @@ https://www.jetbrains.com/teamcity/download/
 
 9. *[On Build Agent and CI Server]* Set password for teamcity user account.
 
-10. *[On Build Agent]* Add the `teamcity` user to the `aegir` group so that
-     creation of build artifacts does not fail when encountering `drushrc.php`
-     files protected by Aegir:
+10. *[On Build Agent]* Add the `teamcity` user to `aegir` and `www-data` groups
+    so that creation of build artifacts does not fail when encountering
+    `drushrc.php` and `settings.php` files protected by Drupal and Aegir:
      
-            sudo usermod -G aegir -a teamcity
+            sudo usermod -G aegir,www-data -a teamcity
 
 11. *[On CI Server]* Install version control (git, mercurial, etc).
 
@@ -80,3 +80,17 @@ https://www.jetbrains.com/teamcity/download/
         drush cc drush
 
 23. *[On CI Server]* Run your first build!
+
+24. *[On Build Agent]* You can log-in to your new site using the log-in link
+    from within the Aegir Hostmaster Front-end.
+    
+25. *[On CI Server]* You can view and download all of the files created as part
+    of the new install profile by going under the "Artifacts" tab on the build
+    in TeamCity.
+    
+    The ZIP file that gets created can be distributed as the full platform --
+    you just need to delete the site for the build from under "sites/", leaving
+    the "default" site folder present. The ZIP can be unpacked on a server and
+    installed by running install.php.
+    
+Happy Drupal continuous integration!
