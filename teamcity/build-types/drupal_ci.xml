@@ -10,11 +10,12 @@
     <parameters>
       <param name="project.internal_name" value="UNSET" />
       <param name="project.platform.install_profile" value="UNSET" />
-      <param name="project.platform.makefile" value="%system.teamcity.build.checkoutDir%/build-%project.platform.install_profile%.make" />
+      <param name="project.platform.makefile" value="%project.platform.src_folder%/build-%project.platform.install_profile%.make" />
       <param name="project.platform.prefix" value="%project.internal_name%_%project.platform.version.core%" />
+      <param name="project.platform.src_folder" value="%system.teamcity.build.checkoutDir%" />
       <param name="project.platform.version.core" value="7x" />
-      <param name="project.site.email" value="UNSET" />
-      <param name="project.site.root_domain" value="hal.redbottledesign.com" />
+      <param name="project.site.email" value="UNSET GLOBAL -- SHOULD BE A VALID NOTIFICATION EMAIL RECIPIENT" />
+      <param name="project.site.root_domain" value="UNSET GLOBAL -- SHOULD BE FQDN OF AEGIR BUILD MACHINE" />
     </parameters>
     <build-runners>
       <runner id="RUNNER_7" name="Assemble installation profile platform and register it with Aegir" type="simpleRunner">
@@ -32,6 +33,11 @@ PLATFORM_NAME='%project.platform.prefix%_b%build.number%'
 PLATFORM_ALIAS="@platform_${PLATFORM_NAME}"
 
 PLATFORM_MAKEFILE='%project.platform.makefile%'
+
+# Ensure that we are building the platform from the checkout folder. Otherwise,
+# "Drush Make Local" will not be able to correctly resolve paths relative to
+# the Drush Makefile.
+cd "%project.platform.src_folder%";
 
 $DRUSH_CMD --root="/var/aegir/platforms/${PLATFORM_NAME}/" provision-save ${PLATFORM_ALIAS} --context_type='platform' --makefile=$PLATFORM_MAKEFILE;
 echo;
