@@ -1,33 +1,30 @@
 <?php
 /**
  * @file
- *  <p>Install hooks for the "Sample Development UI" feature.</p>
- * 
- *  <p>© 2015 Red Bottle Design, LLC. All rights reserved.</p>
+ *  Install hooks for the "Sample Development UI" feature.
+ *
+ *  © 2015 RedBottle Design, LLC. All rights reserved.
  *  
  * @author Guy Paddock (guy.paddock@redbottledesign.com)
  */
 
-/**
- * Constant for the name of this module.
- * 
- * @var string
- */
-define('SADE_MODULE_NAME', 'sample_devel');
+require_once('sample_devel.constants.inc');
 
 /**
- * Implementation of <code>hook_install()</code>.
+ * Implementation of hook_install().
  */
 function sample_devel_install() {
   _sample_devel_initialize_shortcut_sets();
 }
 
 /**
- * Implementation of <code>hook_site_post_install()</code>.
+ * Implementation of hook_site_post_install().
  */
 function sample_devel_site_post_install() {
+  _sample_devel_setup_blocks();
   _sample_devel_set_site_name();
-  _sample_devel_set_admin_password();
+
+  _sample_devel_grant_developer_permissions();
 }
 
 /**
@@ -79,6 +76,12 @@ function _sample_devel_initialize_shortcut_sets() {
       'link_path'   => 'admin/config/workflow/rules',
       'weight'      => 6,
     ),
+
+    array(
+      'link_title'  => 'Views',
+      'link_path'   => 'admin/structure/views',
+      'weight'      => 7,
+    ),
   );
 
   shortcut_set_save($shortcut_set);
@@ -94,24 +97,51 @@ function _sample_devel_initialize_shortcut_sets() {
 }
 
 /**
- * Sets the admin password to a known value, for friendly development.
+ * Enables the specified block from the specified module, and places it in the
+ * specified region of the specified theme.
+ *
+ * @param $module
+ *   The module that defines the block.
+ * @param $delta
+ *   The identifier for the block within the module.
+ * @param $theme
+ *   The theme for which the block should be enabled.
+ * @param $region
+ *   The region in the theme in which the block should appear.
+ * @param $weight
+ *   The relative weight of the block within the region.
  */
-function _sample_devel_set_admin_password() {
+function sample_devel_enable_block($module, $delta, $theme, $region, $weight) {
   watchdog(
     SADE_MODULE_NAME,
-    "Setting admin password to 'abc123'.",
-    array(),
+    'Activating block %module:%delta',
+    array(
+      '%module' => $module,
+      '%delta'  => $delta,
+    ),
     WATCHDOG_DEBUG);
 
-  $user  = user_load(1);
+  db_merge('block')
+    ->key(array(
+      'theme'       => $theme,
+      'delta'       => $delta,
+      'module'      => $module))
+    ->fields(array(
+      'region'      => ($region == BLOCK_REGION_NONE ? '' : $region),
+      'status'      => (int) ($region != BLOCK_REGION_NONE),
+      'visibility'  => 0,
+    ))
+    ->execute();
+}
 
-  $edits = array(
-    'field_user_full_name'  => 'Administrator',
-    'pass'                  => 'abc123',
-  );
-
-  // Set the admin password to a known value
-  user_save($user, $edits);
+/**
+ * Adds any developer-friendly blocks to the theme (Masquerade, etc).
+ */
+function _sample_devel_setup_blocks() {
+  if (module_exists('masquerade')) {
+    // This makes it much, much easier to test user permissions.
+    sample_devel_enable_block('masquerade', 'masquerade', 'bartik', 'footer', 50);
+  };
 }
 
 /**
@@ -120,22 +150,34 @@ function _sample_devel_set_admin_password() {
 function _sample_devel_set_site_name() {
   $build_number = _sample_devel_get_site_build_number();
 
-  if (empty($$build_number)) {
+  if (!empty($build_number)) {
     $title_suffix = ' - Build #' . $build_number;
   }
   else {
     $title_suffix = '';
   }
 
-  variable_set('site_name', "Sample Dev" . $title_suffix);
+  variable_set('site_name', SA_PROFILE_FRIENDLY_NAME . " Dev" . $title_suffix);
 }
 
 /**
- * <p>Extracts the CI build number from the URL of the site (if applicable) and
- * returns it.</p>
+ * Make debugging easier by granting all users the ability to see developer
+ * info.
+ */
+function _sample_devel_grant_developer_permissions() {
+  $devel_permissions = array('access devel information');
+
+  // Grant anonymous and authenticated users the ability to see developer info.
+  user_role_grant_permissions(1, $devel_permissions);
+  user_role_grant_permissions(2, $devel_permissions);
+}
+
+/**
+ * Extracts the CI build number from the URL of the site (if applicable) and
+ * returns it.
  *
- * <p>This method depends entirely on the site URL being set properly during
- * install.</p>
+ * This method depends entirely on the site URL being set properly during
+ * install.
  *
  * @return
  *  Either the CI build number, or {@code NULL} if this site is not being

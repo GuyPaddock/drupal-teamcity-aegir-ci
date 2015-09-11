@@ -1,11 +1,11 @@
 <?php
 /**
  * @file
- *  <p>Install functionality for the "Sample" installation profile.</p>
+ *  Install functionality for the "Sample" installation profile.
  *
- *  <p>© 2015 Red Bottle Design, LLC. All rights reserved.</p>
+ *  © 2015 Red Bottle Design, LLC. All rights reserved.
  *
- * @author  Guy Paddock (guy.paddock@redbottledesign.com)
+ * @author Guy Paddock (guy.paddock@redbottledesign.com)
  */
 require_once('sample.constants.inc');
 
@@ -90,10 +90,10 @@ function sample_import_content() {
 }
 
 /**
- * <p>Set-up all base-level content types needed by this profile.</p>
+ * Set-up all base-level content types needed by this profile.
  *
- * <p><strong>NOTE:</strong> This only installs the most basic content types.
- * Everything else is handled through Features.</p>
+ * <strong>NOTE:</strong> This only installs the most basic content types.
+ * Everything else is handled through Features.
  */
 function _sample_setup_content_types() {
   // Insert default pre-defined node types into the database. For a complete

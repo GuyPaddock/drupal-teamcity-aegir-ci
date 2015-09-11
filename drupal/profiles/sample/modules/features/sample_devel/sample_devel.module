@@ -1,11 +1,30 @@
 <?php
 /**
  * @file
- *  <p>Core code for the "Sample Development UI" feature.</p>
- * 
- *  <p>© 2015 Red Bottle Design, LLC. All rights reserved.</p>
- * 
- *  <p>This semi-blank file is required for Drupal.</p>
- *  
+ *  Core code for the "Sample Development UI" feature.
+ *
+ *  On development copies of the site, this feature provides a better
+ *  experience for developers.
+ *
+ *  Everything useful that this feature provides is done during module
+ *  install, so there is very little additional code in this file.
+ *
+ *  © 2015 RedBottle Design, LLC. All rights reserved.
+ *
  * @author Guy Paddock (guy.paddock@redbottledesign.com)
  */
+
+require_once('sample_devel.features.inc');
+require_once('sample_devel.constants.inc');
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function sample_devel_module_implements_alter(&$implementations, $hook) {
+  // Move this module last to prevent clashing with HaW Soft Delete
+  if ($hook == 'site_post_install') {
+    $group = $implementations[HAWDE_MODULE_NAME];
+    unset($implementations[HAWDE_MODULE_NAME]);
+    $implementations[HAWDE_MODULE_NAME] = $group;
+  }
+}

@@ -1,8 +1,8 @@
 name = Sample
-description = Provides a marketplace for homeowners to find qualified contractors for renovation projects.
-version = 7.x-1.0-sprint1
+description = A sample Drupal installation profile.
+version = 7.x-1.0
 core = 7.x
-distribution_name = Sample
+distribution_name = sample
 exclusive = 1
 
 dependencies[] = block

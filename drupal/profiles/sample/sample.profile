@@ -1,10 +1,9 @@
 <?php
 /**
  * @file
- *  <p>Enables modules and site configuration for a "Sample" site
- *  installation.</p>
+ *  Enables modules and site configuration for a "Sample" site installation.
  *
- *  <p>© 2015 Red Bottle Design, LLC. All rights reserved.</p>
+ *  © 2015 Red Bottle Design, LLC. All rights reserved.
  *
  * @author  Guy Paddock (guy.paddock@redbottledesign.com)
  */
@@ -17,12 +16,12 @@ if (!function_exists('profiler_v2')) {
 profiler_v2(SA_PROFILE_NAME);
 
 /**
- * <p>Implements <code>hook_profiler_form_FORM_ID_alter()</code> for
- * <code>install_configure_form()</code>.</p>
+ * Implements hook_profiler_form_FORM_ID_alter() for install_configure_form().
  *
- * <p>Allows the profile to alter the site configuration form.</p>
+ * Allows the profile to alter the site configuration form.
  */
 function sample_profiler_form_install_configure_form_alter(&$form, $form_state) {
   // Pre-populate the site name
-  $form['site_information']['site_name']['#default_value'] = 'Sample';
+  $form['site_information']['site_name']['#default_value']
+    = SA_PROFILE_FRIENDLY_NAME;
 }

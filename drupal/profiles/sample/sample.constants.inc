@@ -1,9 +1,9 @@
 <?php
 /**
  * @file
- *  <p>Constants for the "Sample" installation profile.</p>
+ *  Constants for the "Sample" installation profile.
  *
- *  <p>© 2015 Red Bottle Design, LLC. All rights reserved.</p>
+ *  © 2015 Red Bottle Design, LLC. All rights reserved.
  *
  * @author  Guy Paddock (guy.paddock@redbottledesign.com)
  */
@@ -14,3 +14,10 @@
  * @var string
  */
 define('SA_PROFILE_NAME', 'sample');
+
+/**
+ * The human-friendly name of this profile.
+ *
+ * @var string
+ */
+define('SA_PROFILE_FRIENDLY_NAME', 'Sample Installation');
