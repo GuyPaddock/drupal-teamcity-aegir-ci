@@ -76,7 +76,8 @@ https://www.jetbrains.com/teamcity/download/
 
 22. *[On Build Agent]* Install Drush make local (Make sure to run the last command to clear the drush cache!):
 
-        git clone https://github.com/helior/make_local.git /usr/share/drush/commands/make_local
+        sudo mkdir -p /usr/local/share/drush/commands
+        sudo git clone https://github.com/helior/make_local.git /usr/local/share/drush/commands/make_local
         drush cc drush
 
 23. *[On CI Server]* Run your first build!
