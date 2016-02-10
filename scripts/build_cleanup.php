@@ -41,26 +41,34 @@
 * cronjob if you wish.
 *
 * @author Guy Paddock (guy.paddock@redbottledesign.com)
-*
 */
 
 // Client name that owns CI builds
 define('CLIENT_NAME', 'teamcity');
 
-// Delete empty auto-generated platforms older than 7 days
-define('ONE_WEEK', 7 * 24 * 60 * 60);
-define('CUTOFF_DATE', ONE_WEEK);
+// Delete empty auto-generated platforms older than a certain period
+define('ONE_DAY',  24 * 60 * 60);
+define('ONE_WEEK', 7 * ONE_DAY);
+define('TWO_DAYS', 2 * ONE_DAY);
+
+define('CUTOFF_DATE', TWO_DAYS);
 
 // Provide the platform location via the command line
 $platform_prefix = drush_shift();
 
 if (empty($platform_prefix)) {
-  fwrite(STDERR, 'Must specify platform prefix as first argument.');
+  fwrite(STDERR, "Must specify platform prefix as first argument.\n");
+  fwrite(STDERR, "Usage: ${argv[0]} </var/aegir/platforms/PREFIX>\n\n");
   exit(1);
 }
 
+echo "Checking for sites to cleanup...\n";
 cleanup_sites($platform_prefix);
+
+echo "Checking for platforms to clean-up...\n";
 cleanup_platforms($platform_prefix);
+
+echo "Build clean-up complete.\n\n";
 
 function cleanup_sites($publish_path_prefix) {
     $sql =
@@ -146,14 +154,14 @@ function cleanup_platforms($publish_path_prefix) {
     while ($row = db_fetch_array($result)) {
       $platform_nid = $row['nid'];
 
-      if ($row['status'] == 1) {
+      if ($row['status'] !== HOSTING_PLATFORM_DELETED) {
         drush_log(
           dt('Queuing empty platform @platform_nid for deletion.', array('@platform_nid' => $platform_nid)), 'ok');
 
         hosting_add_task($platform_nid, 'delete');
       }
 
-      else if ($row['status'] == -2) {
+      else {
         $publish_path = $row['publish_path'];
 
         drush_log(
