@@ -1,0 +1,8 @@
+SHELL=/bin/bash
+
+# GAP on 2016-01-11: Finally adding build clean-up!
+@hourly /var/aegir/scripts/build_cleanup.php /var/aegir/platforms 2>&1 | /var/aegir/scripts/timestamp.awk | tee -a /var/log/aegir/cleanup.log > /dev/null
+@hourly tmpreaper -v --mtime 30d /var/aegir/backups 2>&1 | /var/aegir/scripts/timestamp.awk | tee -a /var/log/aegir/cleanup.log > /dev/null
+@hourly tmpreaper -v --mtime 30d /var/aegir/.drush/cache/download 2>&1 | /var/aegir/scripts/timestamp.awk | tee -a /var/log/aegir/cleanup.log > /dev/null
+
+*/1 * * * * /usr/bin/env php /usr/share/php/drush/drush.php '@hostmaster' hosting-dispatch
