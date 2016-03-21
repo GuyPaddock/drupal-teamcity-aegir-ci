@@ -23,13 +23,15 @@ https://www.drupal.org/node/2275467#comment-8895085
 
         sudo apt-get install default-jre
 
-6. *[On Build Agent and CI Server]* Create Teamcity user account and switch to it.
+6. *[On Build Agent and CI Server]* Create Teamcity user account and switch to it:
+        sudo useradd --system --create-home --home-dir "/opt/teamcity" --comment "TeamCity build daemon" teamcity
+        sudo -i -u teamcity
 
 7. *[On CI Server]* Install TeamCity:
 https://www.jetbrains.com/teamcity/download/
 
-8. *[On CI Server]* **(Linux host only)** Add an init script to start TeamCity CI at boot on port 80:
-  - Add init script (`/etc/init.d/teamcity-server`) and `chmod 755` it (see sample `teamcity/init.d/teamcity-server` in my repo).
+8. *[On CI Server]* **(Linux host only)** Add an init script to start TeamCity CI server at boot on port 80:
+  - Add init script (`/etc/init.d/teamcity-server`) and `chmod 755` it (see sample `teamcity/init.d/teamcity-server` in this repo).
   - Register script to start at boot with `sudo update-rc.d teamcity-server defaults 98 02`.
   - Install Authbind to allow TeamCity to listen on port 80 without being root:
 
@@ -40,7 +42,7 @@ https://www.jetbrains.com/teamcity/download/
 
   - Modify `/opt/teamcity/conf/server.xml` and change Connector port from `8111` to `80` (see: https://confluence.jetbrains.com/display/TCD9/Installing+and+Configuring+the+TeamCity+Server#InstallingandConfiguringtheTeamCityServer-ChangingServerPort)
 
-9. *[On Build Agent and CI Server]* Set password for teamcity user account.
+9. *[On Build Agent and CI Server]* Set a password for teamcity user account.
 
 10. *[On Build Agent]* Add the `teamcity` user to `aegir` and `www-data` groups
     so that creation of build artifacts does not fail when encountering
