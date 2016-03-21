@@ -24,6 +24,7 @@ https://www.drupal.org/node/2275467#comment-8895085
         sudo apt-get install default-jre
 
 6. *[On Build Agent and CI Server]* Create Teamcity user account and switch to it:
+
         sudo useradd --system --create-home --home-dir "/opt/teamcity" --comment "TeamCity build daemon" teamcity
         sudo -i -u teamcity
 
