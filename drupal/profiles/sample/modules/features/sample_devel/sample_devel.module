@@ -23,8 +23,8 @@ require_once('sample_devel.constants.inc');
 function sample_devel_module_implements_alter(&$implementations, $hook) {
   // Move this module last to prevent clashing with HaW Soft Delete
   if ($hook == 'site_post_install') {
-    $group = $implementations[HAWDE_MODULE_NAME];
-    unset($implementations[HAWDE_MODULE_NAME]);
-    $implementations[HAWDE_MODULE_NAME] = $group;
+    $group = $implementations[SADE_MODULE_NAME];
+    unset($implementations[SADE_MODULE_NAME]);
+    $implementations[SADE_MODULE_NAME] = $group;
   }
 }
