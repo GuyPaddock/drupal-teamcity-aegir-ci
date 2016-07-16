@@ -25,7 +25,7 @@ function _sample_import($operation, $type, &$context) {
   );
 
   watchdog(
-    HOATWO_PROFILE_NAME,
+    SA_PROFILE_NAME,
     $message,
     $variables,
     WATCHDOG_DEBUG);
