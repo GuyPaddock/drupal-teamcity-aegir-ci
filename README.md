@@ -1,4 +1,4 @@
-# drupal-teamcity-aegir-ci
+# Resource Kit for Setting up a Drupal CI Environment with Aegir and TeamCity
 This repository contains resources for users setting up a Drupal Continuous Integration environment using Aegir and JetBrains TeamCity.
 
 ## Watch the Video
