@@ -1,4 +1,4 @@
-#!/usr/bin/drush @hostmaster php-script
+#!/usr/local/bin/drush @hostmaster php-script
 <?php
 /**
  * @file
