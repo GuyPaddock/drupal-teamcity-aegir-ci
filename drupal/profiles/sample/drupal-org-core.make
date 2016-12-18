@@ -7,7 +7,10 @@
 
 api = 2
 core = 7.x
-projects[drupal][version] = 7.39
+
+projects[drupal][download][type] = git
+projects[drupal][download][url] = "https://github.com/pantheon-systems/drops-7"
+projects[drupal][download][tag] = "7.53"
 
 ; Patches for Core
 projects[drupal][patch][] = "https://www.drupal.org/files/issues/fix-shortcut-set-save-1175700-24.patch"
