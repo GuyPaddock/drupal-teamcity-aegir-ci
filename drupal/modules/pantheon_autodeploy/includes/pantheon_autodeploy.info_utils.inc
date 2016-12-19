@@ -21,6 +21,71 @@
  *
  * @author Guy Paddock (guy@redbottledesign.com)
  */
+require_once('pantheon_autodeploy.platform_utils.inc');
+
+/**
+ * Finds all modules, features, or themes having the specified machine name.
+ *
+ * @param string $name
+ *   The machine name of the desired module(s), feature(s), or theme(s).
+ *
+ * @return array
+ *   A nested array of info data for all matching modules, features, or themes;
+ *   or an empty array if none could be find. Each entry contains the following
+ *   keys:
+ *     - file: A <code>stdClass</code> object structured according to the
+ *       conventions defined by <code>drush_scan_directory()</code>.
+ *     - data: The data parsed from the info file for the target, in the format
+ *       returned by <code>drush_drupal_parse_info_file()</code>.
+ *
+ * @throws DrushException
+ *   If the platform path cannot be identified, for any reason.
+ */
+function _pantheon_autodeploy_find_info_by_module_name($name) {
+  $result = array();
+
+  $platform_root = pantheon_autodeploy_get_platform_root();
+
+  $exclude_paths  = array('.', '..', 'tests');
+  $all_info_files =
+    drush_scan_directory(
+      $platform_root,         // $dir
+      "/^{$name}\\.info*$/",  // $mask
+      $exclude_paths);        // $nomask
+
+  foreach ($all_info_files as $path => $file) {
+    $result[$path] = array(
+      'file' => $file,
+      'data' => drush_drupal_parse_info_file($path),
+    );
+  }
+
+  return $result;
+}
+
+/**
+ * Finds all `.info` files under the specified root path.
+ *
+ * @param string $root_path
+ *   The path under which `.info` files will be located.
+ * @param array $exclude_paths
+ *   An array of directory or file names to exclude from the search.
+ *
+ * @return stdClass[]
+ *   An array of file objects structured according to the conventions defined by
+ *   <code>drush_scan_directory()</code>.
+ */
+function _pantheon_autodeploy_find_all_info_under_root($root_path, $exclude_paths = array()) {
+  $exclude_paths = array_merge(array('.', '..', 'tests'), $exclude_paths);
+
+  $all_info_files =
+    drush_scan_directory(
+      $root_path,         // $dir
+      "/^.*\\.info*$/",   // $mask
+      $exclude_paths);    // $nomask
+
+  return $all_info_files;
+}
 
 /**
  * Parses an info file from an install profile and returns the result.
@@ -47,7 +112,7 @@
  * @throws InvalidArgumentException
  *   If the specified profile does not exist.
  */
-function pantheon_autodeploy_get_install_profile_info($profile, $info_filename = NULL) {
+function _pantheon_autodeploy_get_install_profile_info($profile, $info_filename = NULL) {
   if (is_object($profile)) {
     $profile_object = $profile;
   }
@@ -104,7 +169,7 @@ function _pantheon_autodeploy_get_settings_for($profile_name, $branch) {
     'tag-after-commit' => FALSE,
   );
 
-  $profile_info = pantheon_autodeploy_get_install_profile_info($profile_name);
+  $profile_info = _pantheon_autodeploy_get_install_profile_info($profile_name);
 
   if (!empty($profile_info['autodeploy']['branches'])) {
     $branches   = $profile_info['autodeploy']['branches'];
@@ -152,7 +217,7 @@ function _pantheon_autodeploy_get_settings_for($profile_name, $branch) {
  *   the same format as returned by <code>drush_drupal_parse_info_file()</code>
  *   or <code>drupal_parse_info_file()</code>.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the file cannot be parsed.
  */
 function _pantheon_autodeploy_parse_dev_only_info($info_file_path) {
@@ -160,7 +225,7 @@ function _pantheon_autodeploy_parse_dev_only_info($info_file_path) {
   $info_data = file_get_contents($info_file_path);
 
   if ($info_data === FALSE) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The specified `.info` file could not be read: @path',
         array('@path' => $info_file_path)));
@@ -172,7 +237,7 @@ function _pantheon_autodeploy_parse_dev_only_info($info_file_path) {
     $result = _drush_drupal_parse_info_file($matches[1]);
 
     if ($result === FALSE) {
-      throw new AutodeployException(
+      throw new DrushException(
         'AUTODEPLOY_REQUIRED_FILES_MALFORMED',
         dt('The dev-only section of the specified `.info` file could not be parsed: @path',
           array('@path' => $info_file_path)));
@@ -189,7 +254,7 @@ function _pantheon_autodeploy_parse_dev_only_info($info_file_path) {
  * @param string $info_file_path
  *   The path to the info file to modify.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the file cannot be parsed or saved successfully.
  */
 function _pantheon_autodeploy_remove_dev_only_info($info_file_path) {
@@ -210,12 +275,12 @@ function _pantheon_autodeploy_remove_dev_only_info($info_file_path) {
  * @param string $replacement
  *   The string to fill-in for any matching portions of the file.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the file cannot be parsed or saved successfully.
  */
 function _pantheon_autodeploy_regex_replace_info($info_file_path, $regex, $replacement) {
   if (!file_exists($info_file_path) || !is_readable($info_file_path)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The specified `.info` file could not be read: @path',
         array('@path' => $info_file_path)));
@@ -224,7 +289,7 @@ function _pantheon_autodeploy_regex_replace_info($info_file_path, $regex, $repla
   $info_data = file_get_contents($info_file_path);
 
   if ($info_data === FALSE) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The specified `.info` file could not be read: @path',
         array('@path' => $info_file_path)));
@@ -234,7 +299,7 @@ function _pantheon_autodeploy_regex_replace_info($info_file_path, $regex, $repla
 
   if (($result_data === NULL) ||
       (file_put_contents($info_file_path, $result_data) === FALSE)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MALFORMED',
       dt('The desired section of the specified `.info` file could not be replaced: @path',
         array('@path' => $info_file_path)));

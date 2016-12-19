@@ -39,7 +39,7 @@
  *   The absolute path to the temporary folder where the GIT repository
  *   was cloned.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the checkout operation fails.
  */
 function _pantheon_autodeploy_git_clone_to_temporary_directory($uri, $checkout_head = TRUE) {
@@ -55,7 +55,7 @@ function _pantheon_autodeploy_git_clone_to_temporary_directory($uri, $checkout_h
   }
 
   if (!drush_shell_exec($clone_command, $uri, $tmp_directory)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_CHECKOUT_FAILED',
       dt('Failed to checkout: @url', array('@url' => $uri)));
   }
@@ -72,7 +72,7 @@ function _pantheon_autodeploy_git_clone_to_temporary_directory($uri, $checkout_h
  * @return string
  *   A multi-line string containing the status of the worktree.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If status cannot be obtained.
  */
 function _pantheon_autodeploy_git_status($working_repo_path) {
@@ -80,7 +80,7 @@ function _pantheon_autodeploy_git_status($working_repo_path) {
   $status_command = $command_prefix . 'status';
 
   if (!drush_shell_exec($status_command, $working_repo_path)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_STATUS_FAILED',
       dt('Failed to get GIT status in `@path`: @output',
         array(
@@ -98,7 +98,7 @@ function _pantheon_autodeploy_git_status($working_repo_path) {
  * @param string $working_repo_path
  *   The path to the GIT repository to stage changes for.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If changes cannot be staged.
  */
 function _pantheon_autodeploy_git_add_all($working_repo_path) {
@@ -106,7 +106,7 @@ function _pantheon_autodeploy_git_add_all($working_repo_path) {
   $add_command    = $command_prefix . 'add %1$s';
 
   if (!drush_shell_exec($add_command, $working_repo_path)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_STAGING_FAILED',
       dt('Failed to stage changes in `@path`: @output',
         array(
@@ -130,7 +130,7 @@ function _pantheon_autodeploy_git_add_all($working_repo_path) {
  *   The name of the author to use for the commit, in
  *   "A U Thor <author@example.com>" format.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the staging or commit operations fail.
  */
 function _pantheon_autodeploy_git_commit($working_repo_path, $message, $author) {
@@ -142,7 +142,7 @@ function _pantheon_autodeploy_git_commit($working_repo_path, $message, $author) 
   _pantheon_autodeploy_git_add_all($working_repo_path);
 
   if (!drush_shell_exec($commit_command, $working_repo_path, $message, $author)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_COMMIT_FAILED',
       dt('Failed to commit changes in `@path`: @output',
         array(
@@ -152,7 +152,7 @@ function _pantheon_autodeploy_git_commit($working_repo_path, $message, $author) 
   }
 
   if (!drush_shell_exec($rev_parse_command, $working_repo_path)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REVID_FAILED',
       dt('Failed to obtain SHA hash of latest commit in `@path`: @output',
         array(
@@ -179,7 +179,7 @@ function _pantheon_autodeploy_git_commit($working_repo_path, $message, $author) 
  * @param string $message
  *   The message to use for the tag.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the staging or commit operations fail.
  */
 function _pantheon_autodeploy_git_tag_commit($working_repo_path, $commit_hash,
@@ -196,7 +196,7 @@ function _pantheon_autodeploy_git_tag_commit($working_repo_path, $commit_hash,
       $commit_hash);
 
   if (!$command_result) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_TAGGING_FAILED',
       dt('Failed to create tag @tag on latest commit in `@path`: @output',
         array(
@@ -219,7 +219,7 @@ function _pantheon_autodeploy_git_tag_commit($working_repo_path, $commit_hash,
  *   The name of the branch that is to be pushed. The default is "master",
  *   which is the most common name for the default GIT branch.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the repository cannot be pushed.
  */
 function _pantheon_autodeploy_git_push($working_repo_path, $remote = 'origin',
@@ -228,7 +228,7 @@ function _pantheon_autodeploy_git_push($working_repo_path, $remote = 'origin',
   $push_command   = $command_prefix . 'push --tags %2$s %3$s';
 
   if (!drush_shell_exec($push_command, $working_repo_path, $remote, $branch)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_PUSH_FAILED',
       dt('Failed to push GIT repository in `@path`: @output',
         array(

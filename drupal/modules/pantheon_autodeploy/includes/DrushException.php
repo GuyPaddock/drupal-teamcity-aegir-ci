@@ -20,24 +20,31 @@
  */
 
 /**
- * Parent type for exceptions that occur when Auto-deploy is performing an
- * operation.
+ * Parent type for exceptions that occur when performing a Drush operation.
+ *
+ * <p>Drush has no built-in exception types, and typically relies on making sure
+ * it checks the status of operations after they happen to know if they were
+ * successful or not. This is error-prone and leads to inconvenient,
+ * deeply-nested code.</p>
+ *
+ * <p>This exception type was created to remedy this issue in Drush extensions
+ * like Pantheon Auto-deploy and Distro Version-er.</p>
  */
-class AutodeployException extends Exception {
+class DrushException extends Exception {
   private $drushErrorCode;
 
   /**
-   * Constructor for <code>AutodeployException</code>.
+   * Constructor for <code>DrushException</code>.
    *
-   * @param string $code
+   * @param string $drushErrorCode
    *   The Drush-friendly error code.
    * @param string $message
    *   The human-friendly error message.
-   * @param Exception|null $previous
+   * @param Exception|null $cause
    *   The previous exception used for the exception chaining.
    */
-  public function __construct($drushErrorCode, $message, Exception $previous = null) {
-    parent::__construct($message, 0, $previous);
+  public function __construct($drushErrorCode, $message, Exception $cause = null) {
+    parent::__construct($message, 0, $cause);
 
     $this->drushErrorCode = $drushErrorCode;
   }

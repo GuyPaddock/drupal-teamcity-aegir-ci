@@ -33,7 +33,7 @@
  * @param string $message
  *   The message ("note") to leave in the Pantheon deployment log.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If an error occurs while interacting with Terminus.
  */
 function _pantheon_autodeploy_pantheon_deploy_site($site_id, $environment, $message) {
@@ -47,7 +47,7 @@ function _pantheon_autodeploy_pantheon_deploy_site($site_id, $environment, $mess
     $deploy_command = 'terminus site deploy --site=%s --env=%s --note=%s --cc';
 
     if (!drush_shell_exec($deploy_command, $site_name, $environment, $message)) {
-      throw new AutodeployException(
+      throw new DrushException(
         'AUTODEPLOY_SITE_DEPLOY_FAILED',
         dt('Failed to deploy Pantheon site `@site_name` (@site_id) to `@environment`: @output',
           array(
@@ -72,7 +72,7 @@ function _pantheon_autodeploy_pantheon_deploy_site($site_id, $environment, $mess
  * @throws InvalidArgumentException
  *   If there is no site in the list with the given name.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the site list cannot be obtained.
  */
 function _pantheon_autodeploy_pantheon_site_name_to_id($site_name) {
@@ -104,7 +104,7 @@ function _pantheon_autodeploy_pantheon_site_name_to_id($site_name) {
  * @throws InvalidArgumentException
  *   If there is no site in the list with the given ID.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the site list cannot be obtained.
  */
 function _pantheon_autodeploy_pantheon_site_id_to_name($site_id) {
@@ -128,7 +128,7 @@ function _pantheon_autodeploy_pantheon_site_id_to_name($site_id) {
  *   An associative array, where the keys are Pantheon site IDs, and the values
  *   are site machine names.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the site list cannot be obtained.
  */
 function _pantheon_autodeploy_pantheon_get_site_map() {
@@ -140,7 +140,7 @@ function _pantheon_autodeploy_pantheon_get_site_map() {
     $site_list_command = 'terminus sites list | awk \'{ print $1 "," $2; }\'';
 
     if (!drush_shell_exec($site_list_command)) {
-      throw new AutodeployException(
+      throw new DrushException(
         'AUTODEPLOY_SITE_LIST_FAILED',
         dt('Failed to get Pantheon sites list: @output',
           array(

@@ -22,17 +22,17 @@
  */
 require_once('pantheon_autodeploy.constants.inc');
 
-require_once('AutodeployException.php');
+require_once('includes/DrushException.php');
 
-require_once('pantheon_autodeploy.file_utils.inc');
-require_once('pantheon_autodeploy.git_utils.inc');
-require_once('pantheon_autodeploy.info_utils.inc');
-require_once('pantheon_autodeploy.platform_utils.inc');
-require_once('pantheon_autodeploy.shell_utils.inc');
-require_once('pantheon_autodeploy.terminus_utils.inc');
+require_once('includes/pantheon_autodeploy.file_utils.inc');
+require_once('includes/pantheon_autodeploy.git_utils.inc');
+require_once('includes/pantheon_autodeploy.info_utils.inc');
+require_once('includes/pantheon_autodeploy.platform_utils.inc');
+require_once('includes/pantheon_autodeploy.shell_utils.inc');
+require_once('includes/pantheon_autodeploy.terminus_utils.inc');
 
 //==============================================================================
-// Drush standard interface hooks
+// Drush Interface Methods
 //==============================================================================
 
 /**
@@ -94,11 +94,8 @@ function pantheon_autodeploy_drush_command() {
   return $items;
 }
 
-//==============================================================================
-// Top-level Pantheon Auto-deploy Functionality
-//==============================================================================
 /**
- * The <code>pantheon autodeploy</code> (<code>pad</code>) command.
+ * The <code>pantheon-autodeploy</code> (<code>pad</code>) command.
  *
  * Deploys an installation profile as a distribution to a Pantheon instance via
  * GIT.
@@ -117,7 +114,7 @@ function pantheon_autodeploy_drush_command() {
  * @param string $site_id
  *   Pantheon's UUID for the site.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the deployment fails.
  */
 function drush_pantheon_autodeploy($site_id = NULL) {
@@ -148,7 +145,7 @@ function drush_pantheon_autodeploy($site_id = NULL) {
         $site_id, $profile_name, $tag_after_commit, $target_environment);
     }
   }
-  catch (AutodeployException $ex) {
+  catch (DrushException $ex) {
     drush_set_error($ex->getDrushErrorCode(), $ex->getMessage());
   }
   catch (InvalidArgumentException $ex) {
@@ -170,7 +167,7 @@ function drush_pantheon_autodeploy($site_id = NULL) {
  *   NOTE: This is the name of the branch in the installation profile source
  *   repo, not the Pantheon repo.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the deployment operation fails.
  */
 function pantheon_autodeploy_run_from_info_file($profile_name, $branch_name) {
@@ -208,7 +205,7 @@ function pantheon_autodeploy_run_from_info_file($profile_name, $branch_name) {
  * @param boolean $tag_after_commit
  *   Whether or not to tag commits with the installation profile version.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the deployment operation fails.
  */
 function pantheon_autodeploy_run_from_cli($site_id, $profile_name,
@@ -240,7 +237,7 @@ function pantheon_autodeploy_run_from_cli($site_id, $profile_name,
  * @param string $target_environment
  *   The name of the Pantheon environment to which the site should be deployed.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the deployment fails.
  */
 function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
@@ -287,7 +284,7 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_
  * @param string $profile_name
  *   The machine name of the installation profile being deployed.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If any arguments are invalid.
  */
 function pantheon_autodeploy_validate_options_pre_profile_load(
@@ -353,7 +350,7 @@ function pantheon_autodeploy_validate_options_pre_profile_load(
  *   The name of the Pantheon environment to which the site should be deployed
  *   after being committed.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If any arguments are invalid.
  */
 function pantheon_autodeploy_validate_options_post_profile_load($site_id, $target_environment) {
@@ -368,7 +365,7 @@ function pantheon_autodeploy_validate_options_post_profile_load($site_id, $targe
 }
 
 //==============================================================================
-// Methods for Each Step of Pantheon Auto-deploy Functionality
+// Public API Methods
 //==============================================================================
 /**
  * Checks-out the GIT repository for the Pantheon site.
@@ -378,7 +375,7 @@ function pantheon_autodeploy_validate_options_post_profile_load($site_id, $targe
  * @return string
  *   The local path to the temporary folder where the site was checked out.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the checkout operation fails.
  */
 function pantheon_autodeploy_checkout_site($site_id) {
@@ -431,7 +428,7 @@ function pantheon_autodeploy_prune_target($site_repo_path, $profile_name) {
  *   The absolute path to the location where the Pantheon site has been
  *   checked-out.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If copying the platform and profile fails.
  */
 function pantheon_autodeploy_copy_profile($profile_name, $site_repo_path) {
@@ -481,7 +478,7 @@ function pantheon_autodeploy_copy_profile($profile_name, $site_repo_path) {
  * @param string $profile_name
  *   The machine name of the installation profile being deployed.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the operation fails.
  */
 function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile_name) {
@@ -511,7 +508,7 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
 
   if (!is_file($profile_info_path) && !is_readable($profile_info_path)) {
     // It IS fatal to be missing the profile `.info` file, though.
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The install profile `.info` file could not be located at: @path',
         array('@path' => $profile_info_path)));
@@ -617,7 +614,7 @@ function pantheon_autodeploy_commit_and_push_site($site_repo_path,
  * @param string $message
  *   The message to use in deployment logs.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the deployment fails.
  */
 function pantheon_autodeploy_deploy_site($site_id, $target_environment, $message) {
@@ -659,7 +656,7 @@ function pantheon_autodeploy_deploy_site($site_id, $target_environment, $message
 }
 
 //==============================================================================
-// Utility Methods for Pantheon Auto-deploy Functionality
+// Utility Methods
 //==============================================================================
 /**
  * Removes modules with the specified names from the specified profile in the
@@ -678,7 +675,7 @@ function pantheon_autodeploy_remove_modules(array $modules, $site_repo_path, $pr
     sprintf("%s/profiles/%s/modules", $site_repo_path, $profile_name);
 
   $escaped_modules = array_map("_pantheon_autodeploy_regex_escape", $modules);
-  $module_regex    = sprintf('/(%s)\.info/', implode("|", $escaped_modules));
+  $module_regex    = sprintf('/^(%s)\.info$/', implode("|", $escaped_modules));
 
   $found_files = drush_scan_directory($profile_modules_path, $module_regex);
 
@@ -769,7 +766,7 @@ function pantheon_autodeploy_generate_git_commit_message($profile_version) {
  *   is structured according to the conventions defined by
  *   <code>drush_scan_directory()</code>.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If required files are missing from the source platform.
  */
 function _pantheon_autodeploy_get_source_files($profile_name) {
@@ -779,14 +776,14 @@ function _pantheon_autodeploy_get_source_files($profile_name) {
   $sites_path   = sprintf('%s/sites', $platform_root);
 
   if (!is_dir($profile_path)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('Could not find the installation profile in the expected location: @path',
         array('@path' => $profile_path)));
   }
 
   if (!is_dir($sites_path)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('Could not find the sites folder in the expected location: @path',
         array('@path' => $sites_path)));

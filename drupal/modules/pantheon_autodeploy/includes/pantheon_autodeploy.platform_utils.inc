@@ -28,7 +28,7 @@
  * @return string
  *   The local path to the platform.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the platform path cannot be identified, for any reason.
  */
 function pantheon_autodeploy_get_platform_root() {
@@ -39,7 +39,7 @@ function pantheon_autodeploy_get_platform_root() {
   }
 
   if (empty($drupal_root)) {
-    throw new AutodeployException(
+    throw new DrushException(
       'DRUSH_SOURCE_NOT_EXISTS', dt('Cannot locate the source platform.'));
   }
 
@@ -58,7 +58,7 @@ function pantheon_autodeploy_get_platform_root() {
  * @return string
  *   The version string for the installation profile.
  *
- * @throws AutodeployException
+ * @throws DrushException
  *   If the version cannot be determined, for any reason.
  */
 function pantheon_autodeploy_get_profile_version($profile_name) {
@@ -71,7 +71,7 @@ function pantheon_autodeploy_get_profile_version($profile_name) {
       sprintf('%s/profiles/%2$s/%2$s.info', $platform_root, $profile_name);
 
     if (!file_exists($profile_info_path) || !is_readable($profile_info_path)) {
-      throw new AutodeployException(
+      throw new DrushException(
         'AUTODEPLOY_REQUIRED_FILES_MISSING',
         dt('The specified `.info` file could not be read: @path',
           array('@path' => $profile_info_path)));
@@ -80,7 +80,7 @@ function pantheon_autodeploy_get_profile_version($profile_name) {
     $profile_info = drush_drupal_parse_info_file($profile_info_path);
 
     if (empty($profile_info['version'])) {
-      throw new AutodeployException(
+      throw new DrushException(
         'AUTODEPLOY_VERSION_MISSING',
         dt('No version has been declared in the profile `.info` file: @path',
           array('@path' => $profile_info_path)));
@@ -109,7 +109,7 @@ function _pantheon_autodeploy_locate_exclusive_install_profile() {
   $profiles = _pantheon_autodeploy_get_install_profiles();
 
   foreach ($profiles as $profile) {
-    $info_file_data = pantheon_autodeploy_get_install_profile_info($profile);
+    $info_file_data = _pantheon_autodeploy_get_install_profile_info($profile);
 
     if (!empty($info_file_data['exclusive'])) {
       $result = $profile;
