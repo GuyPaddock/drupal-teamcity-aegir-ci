@@ -73,9 +73,7 @@ function _pantheon_autodeploy_git_status($working_repo_path) {
         )));
   }
 
-  $status_output = drush_shell_exec_output();
-
-  return implode(PHP_EOL, $status_output);
+  return _pantheon_autodeploy_get_shell_output();
 }
 
 /**
