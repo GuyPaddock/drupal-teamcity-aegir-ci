@@ -39,6 +39,30 @@ define('PAAU_OPTION_PROFILE', 'profile');
 define('PAAU_OPTION_TAG_AFTER_COMMIT', 'site-tag-after-commit');
 
 /**
+ * The name of the command-line option that allows the GIT author to be set to
+ * a specific value.
+ *
+ * @var string
+ */
+define('PAAU_OPTION_GIT_AUTHOR', 'git-author');
+
+/**
+ * The name of the command-line option that allows the CI build # from the
+ * source repo to be passed-through.
+ *
+ * @var string
+ */
+define('PAAU_OPTION_SOURCE_BUILD', 'source-build-number');
+
+/**
+ * The name of the command-line option that allows the SHA commit of the
+ * source repo to be passed-through.
+ *
+ * @var string
+ */
+define('PAAU_OPTION_SOURCE_COMMIT', 'source-commit-hash');
+
+/**
  * The sprintf pattern for a Pantheon clone URL.
  */
 define('PAAU_PANTHEON_CLONE_PATTERN', 'ssh://codeserver.dev.%1$s@codeserver.dev.%1$s.drush.in:2222/~/repository.git');

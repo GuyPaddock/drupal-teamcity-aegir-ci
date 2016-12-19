@@ -42,24 +42,36 @@ function pantheon_autodeploy_drush_command() {
 
       PAAU_OPTION_PROFILE =>
         dt('The installation profile to deploy. (The default is the `exclusive` profile in the current platform.)'),
-      
+
       PAAU_OPTION_TAG_AFTER_COMMIT =>
         dt('Whether or not the site should be tagged with the installation profile version after being committed. (The default is `false`).'),
+
+      PAAU_OPTION_GIT_AUTHOR =>
+        dt('Overrides the GIT author used for auto-deploy commits to the Pantheon site repository. Must be in standard GIT "A U Thor <author@example.com>" format.'),
+
+      PAAU_OPTION_SOURCE_BUILD =>
+        dt('Provides the build # from a continuous integration build # for the code that is being deployed, for cross-referencing in commit logs. (The default is not to include one).'),
+
+      PAAU_OPTION_SOURCE_COMMIT =>
+        dt('Provides the SHA hash of the source commit from which code is being deployed, for cross-referencing in commit logs. (The default is not to include one).'),
     ),
     'examples' => array(
       'drush pad 7ea62566-14c1-47e1-93f1-223759193e9e' =>
         dt('Deploys the current Drupal platform with its `exclusive` installation profile to the specified Pantheon instance using key-based authentication.'),
 
-      'drush pad 7ea62566-14c1-47e1-93f1-223759193e9e --' . PAAU_OPTION_PROFILE . '="my_profile"' =>
+      sprintf('drush pad 7ea62566-14c1-47e1-93f1-223759193e9e --%s="my_profile"', PAAU_OPTION_PROFILE) =>
         dt('Deploys the current Drupal platform with its "my_profile" installation profile to the specified Pantheon instance using key-based authentication.'),
 
-      'drush pad 7ea62566-14c1-47e1-93f1-223759193e9e --' . PAAU_OPTION_TARGET_ENV . '="test" ' . PAAU_OPTION_TAG_AFTER_COMMIT . '=true' =>
+      sprintf('drush pad 7ea62566-14c1-47e1-93f1-223759193e9e --%s="test" --%s=true', PAAU_OPTION_TARGET_ENV, PAAU_OPTION_TAG_AFTER_COMMIT) =>
         dt('Deploys the current Drupal platform with its `exclusive` installation profile to the dev and test environments of the specified Pantheon instance, tagging the revision after commit.'),
 
-      'drush pad --' . PAAU_OPTION_USE_INFO . '="develop"' =>
+      sprintf('drush pad 7ea62566-14c1-47e1-93f1-223759193e9e --%s="live" --%s="611" --%s="0788603f1c948671fbc56a18afa5e71f6b247520"', PAAU_OPTION_TARGET_ENV, PAAU_OPTION_SOURCE_BUILD, PAAU_OPTION_SOURCE_COMMIT) =>
+        dt('Deploys the current Drupal platform with its `exclusive` installation profile to the live environment of the specified Pantheon instance, including build #611 and source commit hash in deployment logs.'),
+
+      sprintf('drush pad --%s="develop"', PAAU_OPTION_USE_INFO) =>
         dt('Deploys the current Drupal platform with its `exclusive` installation profile using that profile\'s settings for the `develop` branch. If there are no settings for `develop`, do nothing.'),
 
-      'drush pad --' . PAAU_OPTION_PROFILE . '="my_profile" --' . PAAU_OPTION_USE_INFO . '="develop"' =>
+      sprintf('drush pad --%s="my_profile" --%s="develop"', PAAU_OPTION_PROFILE, PAAU_OPTION_USE_INFO) =>
         dt('Deploys the current Drupal platform with its "my_profile" installation profile using that profile\'s settings for the `develop` branch. If there are no settings for `develop`, do nothing.'),
     ),
   );
@@ -68,7 +80,7 @@ function pantheon_autodeploy_drush_command() {
 }
 
 //==============================================================================
-// Pantheon Auto-deploy Functionality
+// Top-level Pantheon Auto-deploy Functionality
 //==============================================================================
 /**
  * The <code>pantheon autodeploy</code> (<code>pad</code>) command.
@@ -125,7 +137,7 @@ function drush_pantheon_autodeploy($site_id = NULL) {
     drush_set_error($ex->getDrushErrorCode(), $ex->getMessage());
   }
   catch (InvalidArgumentException $ex) {
-    drush_set_error('DRUSH_APPLICATION_ERROR', $ex->getMessage());
+    drush_set_error('AUTODEPLOY_VALID_OPTION_REQUIRED', $ex->getMessage());
   }
 }
 
@@ -201,6 +213,45 @@ function pantheon_autodeploy_run_from_cli($site_id, $profile_name,
 }
 
 /**
+ * Runs the deployment operation.
+ *
+ * @param string $site_id
+ *   The UUID of the target Pantheon site.
+ *   after being committed.
+ * @param string $profile_name
+ *   The machine name of the installation profile being deployed.
+ * @param boolean $tag_after_commit
+ *   Whether or not to tag commits with the installation profile version.
+ * @param string $target_environment
+ *   The name of the Pantheon environment to which the site should be deployed.
+ *
+ * @throws AutodeployException
+ *   If the deployment fails.
+ */
+function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
+                                            $target_environment) {
+  $site_repo_path  = pantheon_autodeploy_checkout_site($site_id);
+
+  pantheon_autodeploy_prune_target($site_repo_path, $profile_name);
+  pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
+  pantheon_autodeploy_strip_development_modules($site_repo_path, $profile_name);
+
+  $profile_version =
+    pantheon_autodeploy_get_profile_version($profile_name);
+
+  $commit_message =
+    pantheon_autodeploy_generate_git_commit_message($profile_version);
+
+  pantheon_autodeploy_commit_and_push_site(
+    $site_repo_path, $commit_message, $profile_version, $tag_after_commit);
+
+  pantheon_autodeploy_deploy_site($site_id, $target_environment, $commit_message);
+}
+
+//==============================================================================
+// Pantheon Auto-deploy Argument Validation
+//==============================================================================
+/**
  * Validates that required arguments and options are being passed to the
  * Pantheon Auto-deploy command on the command-line.
  *
@@ -232,27 +283,23 @@ function pantheon_autodeploy_validate_options_pre_profile_load(
                                           $profile_name) {
   if ($use_settings_for_branch) {
     if (!empty($site_id)) {
-      throw new AutodeployException(
-        'AUTODEPLOY_ARGUMENT_REQUIRED',
+      throw new InvalidArgumentException(
         dt('When using settings from the profile `.info` file, you cannot specify the Pantheon site UUID.'));
     }
 
     if (!empty($target_environment)) {
-      throw new AutodeployException(
-        'AUTODEPLOY_OPTION_CONFLICT',
+      throw new InvalidArgumentException(
         dt('When using settings from the profile `.info` file, you cannot specify the target environment.'));
     }
 
     if (!empty($tag_after_commit)) {
-      throw new AutodeployException(
-        'AUTODEPLOY_OPTION_CONFLICT',
+      throw new InvalidArgumentException(
         dt('When using settings from the profile `.info` file, you cannot pass the tag-after-commit option.'));
     }
   }
   else {
     if (empty($site_id)) {
-      throw new AutodeployException(
-        'AUTODEPLOY_ARGUMENT_REQUIRED',
+      throw new InvalidArgumentException(
         dt('When not using settings from the profile `.info` file, you need to specify a valid Pantheon site UUID (for example, `7ea62566-14c1-47e1-93f1-223759193e9e`).'));
     }
   }
@@ -260,8 +307,7 @@ function pantheon_autodeploy_validate_options_pre_profile_load(
   $profiles = _pantheon_autodeploy_get_install_profiles();
 
   if (empty($profile_name)) {
-    throw new AutodeployException(
-      'AUTODEPLOY_OPTION_REQUIRED',
+    throw new InvalidArgumentException(
       dt('No installation profile was specified, and none of the installation profiles in the current platform are `exclusive`. Please specify the target profile. Valid profiles are: [@types]',
         array(
           '@types' => implode(', ', array_keys($profiles)),
@@ -269,8 +315,7 @@ function pantheon_autodeploy_validate_options_pre_profile_load(
   }
 
   if (!isset($profiles[$profile_name])) {
-    throw new AutodeployException(
-      'AUTODEPLOY_INVALID_PROFILE',
+    throw new InvalidArgumentException(
       dt('`@name` is not a valid installation profile in the current platform. Valid profiles are: [@types]',
        array(
          '@name'  => $profile_name,
@@ -298,76 +343,18 @@ function pantheon_autodeploy_validate_options_pre_profile_load(
  */
 function pantheon_autodeploy_validate_options_post_profile_load($site_id, $target_environment) {
   if (empty($site_id) || !preg_match(PAAU_UUID_PATTERN, $site_id)) {
-    throw new AutodeployException(
-      'AUTODEPLOY_ARGUMENT_REQUIRED',
+    throw new InvalidArgumentException(
       dt('You need to specify a valid Pantheon site UUID (for example, `7ea62566-14c1-47e1-93f1-223759193e9e`).'));
   }
 
   if (!empty($target_environment)) {
-    $allowed_environments =
-      array(
-        PAAU_PANTHEON_ENV_DEV,
-        PAAU_PANTHEON_ENV_TEST,
-        PAAU_PANTHEON_ENV_LIVE,
-      );
-
-    if (!in_array($target_environment, $allowed_environments)) {
-      throw new AutodeployException(
-        'AUTODEPLOY_OPTION_REQUIRED',
-        dt('`@name` is not a valid Pantheon environment name. Valid environments are: [@types]',
-          array(
-            '@name'  => $target_environment,
-            '@types' => implode(', ', $allowed_environments),
-          )));
-    }
+    _pantheon_autodeploy_validate_pantheon_environment($target_environment);
   }
 }
 
-/**
- * Runs the deployment operation.
- *
- * @param string $site_id
- *   The UUID of the target Pantheon site.
- *   after being committed.
- * @param string $profile_name
- *   The machine name of the installation profile being deployed.
- * @param boolean $tag_after_commit
- *   Whether or not to tag commits with the installation profile version.
- * @param string $target_environment
- *   The name of the Pantheon environment to which the site should be deployed.
- *
- * @throws AutodeployException
- *   If the deployment fails.
- */
-function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
-                                            $target_environment) {
-  drush_log(
-    dt('Checking out site `@site_id` from Pantheon.',
-      array('@site_id' => $site_id)));
-  $site_repo_path = pantheon_autodeploy_checkout_site($site_id);
-
-  drush_log(dt('Pruning unwanted files from the checkout path.'));
-  pantheon_autodeploy_prune_target($site_repo_path, $profile_name);
-
-  drush_log(
-    dt('Copying platform and installation profile `@profile_name` to checkout path.',
-      array('@profile_name' => $profile_name)));
-  pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
-
-  drush_log(
-    dt('Stripping development-only modules and features out of `@profile_name` in the platform.',
-      array('@profile_name' => $profile_name)));
-  pantheon_autodeploy_strip_development_modules($site_repo_path, $profile_name);
-
-  if (!$tag_after_commit) {
-    drush_log(dt('Staging, committing, and pushing changed files to Pantheon site.'));
-  }
-  else {
-    drush_log(dt('Staging, committing, tagging, and pushing changed files to Pantheon site.'));
-  }
-  pantheon_autodeploy_commit_and_push_site($site_repo_path, $profile_name, $tag_after_commit);
-}
-
+//==============================================================================
+// Methods for Each Step of Pantheon Auto-deploy Functionality
+//==============================================================================
 /**
  * Checks-out the GIT repository for the Pantheon site.
  *
@@ -382,8 +369,17 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_
 function pantheon_autodeploy_checkout_site($site_id) {
   $repo_url = pantheon_autodeploy_get_git_repo_url($site_id);
 
+  drush_log(
+    dt('Checking out site `@site_id` from Pantheon.',
+      array('@site_id' => $site_id)));
+
   $local_checkout_path =
     _pantheon_autodeploy_git_clone_to_temporary_directory($repo_url);
+
+  drush_log(
+    dt('Site `@site_id` checked-out from GIT.',
+      array('@site_id' => $site_id)),
+    'success');
 
   return $local_checkout_path;
 }
@@ -402,7 +398,12 @@ function pantheon_autodeploy_checkout_site($site_id) {
  */
 function pantheon_autodeploy_prune_target($site_repo_path, $profile_name) {
   $profile_path = sprintf('%s/profiles/%s', $site_repo_path, $profile_name);
+
+  drush_log(dt('Pruning unwanted files from the site work tree path.'));
   _pantheon_autodeploy_force_delete_dir($profile_path);
+
+  drush_log(
+    dt('Unwanted files from site work tree have been pruned.'), 'success');
 }
 
 /**
@@ -420,6 +421,10 @@ function pantheon_autodeploy_prune_target($site_repo_path, $profile_name) {
  */
 function pantheon_autodeploy_copy_profile($profile_name, $site_repo_path) {
   $source_files = _pantheon_autodeploy_get_source_files($profile_name);
+
+  drush_log(
+    dt('Copying platform and installation profile `@profile_name` to checkout path.',
+      array('@profile_name' => $profile_name)));
 
   if (!empty($source_files)) {
     $platform_root = pantheon_autodeploy_get_platform_root();
@@ -440,6 +445,11 @@ function pantheon_autodeploy_copy_profile($profile_name, $site_repo_path) {
         FILE_EXISTS_MERGE);
     }
   }
+
+  drush_log(
+    dt('Platform, with `@profile_name` profile, copied to site work tree.',
+      array('@profile_name' => $profile_name)),
+    'success');
 }
 
 /**
@@ -466,8 +476,12 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
   $profile_info_path =
     sprintf('%1$s/profiles/%2$s/%2$s.info', $site_repo_path, $profile_name);
 
+  drush_log(
+    dt('Stripping development-only modules and features out of `@profile_name` in the platform.',
+      array('@profile_name' => $profile_name)));
+
   if (!is_file($drush_make_path) && !is_readable($drush_make_path)) {
-    throw new AutodeployException(
+    drush_log(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The Drush make file could not be located at: @path',
         array('@path' => $drush_make_path)));
@@ -500,7 +514,13 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
   pantheon_autodeploy_remove_modules(
     $modules_to_strip, $site_repo_path, $profile_name);
 
+  drush_log(
+    dt('Stripping development-only information out of profile info files.'));
   _pantheon_autodeploy_remove_dev_only_info($profile_info_path);
+
+  drush_log(
+    dt('Development-only modules and dependencies stripped from platform.'),
+    'success');
 }
 
 /**
@@ -512,24 +532,35 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
  * @param string $site_repo_path
  *   The absolute path to the location where the Pantheon site has been
  *   checked-out.
- * @param string $profile_name
- *   The machine name of the installation profile being deployed.
+ * @param string $commit_message
+ *   The message to use for commits and tags.
+ * @param string $profile_version
+ *   The version number of the profile, in Drupal's standard format of
+ *   "7.x-1.0", for use by tags. Can be <code>NULL</code> if
+ *   <code>$tag_after_commit</code> is <code>FALSE</code>.
  * @param boolean $tag_after_commit
  *   Whether or not to tag commits with the installation profile version.
  */
 function pantheon_autodeploy_commit_and_push_site($site_repo_path,
-                                                  $profile_name,
+                                                  $commit_message,
+                                                  $profile_version,
                                                   $tag_after_commit) {
-  $profile_version = pantheon_autodeploy_get_profile_version($profile_name);
+  if ($tag_after_commit && empty($profile_version)) {
+    throw new InvalidArgumentException(
+      dt('Profile version must not be NULL or empty when tagging after-commit is enabled.'));
+  }
 
   $author_name =
     drush_get_option(
-      'git-author',
+      PAAU_OPTION_GIT_AUTHOR,
       'Pantheon Auto-deploy <support@redbottledesign.com>');
 
-  $commit_message =
-    dt('[@version] Automatic deployment to Pantheon.',
-      array('@version' => $profile_version));
+  if (!$tag_after_commit) {
+    drush_log(dt('Staging, committing, and pushing changed files to Pantheon site.'));
+  }
+  else {
+    drush_log(dt('Staging, committing, tagging, and pushing changed files to Pantheon site.'));
+  }
 
   _pantheon_autodeploy_git_add_all($site_repo_path);
 
@@ -551,8 +582,65 @@ function pantheon_autodeploy_commit_and_push_site($site_repo_path,
   }
   
   _pantheon_autodeploy_git_push($site_repo_path);
+
+  drush_log(dt('Site checked-in and pushed to Pantheon.'), 'success');
 }
 
+/**
+ * Deploys the specified Pantheon environment to the specified environment.
+ *
+ * @param string $site_id
+ *   The UUID of the target Pantheon site.
+ *   after being committed.
+ * @param string $target_environment
+ *   The name of the Pantheon environment to which the site should be deployed.
+ * @param string $message
+ *   The message to use in deployment logs.
+ *
+ * @throws AutodeployException
+ *   If the deployment fails.
+ */
+function pantheon_autodeploy_deploy_site($site_id, $target_environment, $message) {
+  $deployments_needed = array();
+
+  $requires_test_deployment = array(PAAU_PANTHEON_ENV_TEST, PAAU_PANTHEON_ENV_LIVE);
+  $requires_live_deployment = array(PAAU_PANTHEON_ENV_LIVE);
+
+  if (in_array($target_environment, $requires_test_deployment)) {
+    $deployments_needed[] = PAAU_PANTHEON_ENV_TEST;
+  }
+
+  if (in_array($target_environment, $requires_live_deployment)) {
+    $deployments_needed[] = PAAU_PANTHEON_ENV_LIVE;
+  }
+
+  if (empty($deployments_needed)) {
+    drush_log(
+      dt('No deployment necessary -- GIT already pushed `@site_id` to the dev environment.',
+        array('@site_id' => $site_id)),
+      'success');
+  }
+  else {
+    foreach ($deployments_needed as $deployment) {
+      drush_log(
+        dt('Deploying `@site_id` to `@environment`.',
+          array(
+            '@site_id'     => $site_id,
+            '@environment' => $deployment)));
+
+      _pantheon_autodeploy_pantheon_deploy_site($site_id, $deployment, $message);
+
+      drush_log(
+        dt('Site deployed to the `@environment` on Pantheon.',
+          array('@environment' => $deployment)),
+        'success');
+    }
+  }
+}
+
+//==============================================================================
+// Utility Methods for Pantheon Auto-deploy Functionality
+//==============================================================================
 /**
  * Removes modules with the specified names from the specified profile in the
  * specified checked-out copy of a Pantheon site.
@@ -601,6 +689,53 @@ function pantheon_autodeploy_remove_modules(array $modules, $site_repo_path, $pr
  */
 function pantheon_autodeploy_get_git_repo_url($site_id) {
   return sprintf(PAAU_PANTHEON_CLONE_PATTERN, $site_id);
+}
+
+/**
+ * Generates an appropriate message to describe a GIT commit, tag, or deployment
+ * of a given version of the installation profile.
+ *
+ * @param string $profile_version
+ *   The version number of the profile, in Drupal's standard format of
+ *   "7.x-1.0".
+ *
+ * @return string
+ *   The localized commit message.
+ */
+function pantheon_autodeploy_generate_git_commit_message($profile_version) {
+  $source_build = drush_get_option(PAAU_OPTION_SOURCE_BUILD, NULL);
+  $source_hash  = drush_get_option(PAAU_OPTION_SOURCE_COMMIT, NULL);
+
+  if (empty($source_build) && empty($source_hash)) {
+    $source_rev_id = '';
+  }
+  elseif (!empty($source_build) && empty($source_hash)) {
+    $source_rev_id =
+      dt(' [build @build_number]',
+        array('@build_number' => $source_build));
+  }
+  elseif (empty($source_build) && !empty($source_hash)) {
+    $source_rev_id =
+      dt(' [source hash: @build_hash]',
+        array('@build_hash' => $source_hash));
+  }
+  else {
+    $source_rev_id =
+      dt(' [build @build_number, source hash: @build_hash]',
+        array(
+          '@build_number' => $source_build,
+          '@build_hash' => $source_hash,
+        ));
+  }
+
+  $commit_message =
+    dt('[@version] Automatic deployment to Pantheon@source_build_id.',
+      array(
+        '@version'          => $profile_version,
+        '@source_build_id'  => $source_rev_id,
+      ));
+
+  return $commit_message;
 }
 
 /**

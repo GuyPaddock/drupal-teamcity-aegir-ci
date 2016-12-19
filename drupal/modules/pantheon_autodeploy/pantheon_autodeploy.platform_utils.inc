@@ -34,6 +34,9 @@ function pantheon_autodeploy_get_platform_root() {
 /**
  * Gets the declared version of the specified installation profile.
  *
+ * <p>For performance reasons, the version of each profile is only fetched once
+ * and then cached for the duration of the command execution.</p>
+ *
  * @param string $profile_name
  *   The machine name of the installation profile.
  *
@@ -44,28 +47,34 @@ function pantheon_autodeploy_get_platform_root() {
  *   If the version cannot be determined, for any reason.
  */
 function pantheon_autodeploy_get_profile_version($profile_name) {
-  $platform_root     = pantheon_autodeploy_get_platform_root();
+  static $profile_versions = array();
 
-  $profile_info_path =
-    sprintf('%s/profiles/%2$s/%2$s.info', $platform_root, $profile_name);
+  if (!isset($profile_versions[$profile_name])) {
+    $platform_root = pantheon_autodeploy_get_platform_root();
 
-  if (!file_exists($profile_info_path) || !is_readable($profile_info_path)) {
-    throw new AutodeployException(
-      'AUTODEPLOY_REQUIRED_FILES_MISSING',
-      dt('The specified `.info` file could not be read: @path',
-        array('@path' => $profile_info_path)));
+    $profile_info_path =
+      sprintf('%s/profiles/%2$s/%2$s.info', $platform_root, $profile_name);
+
+    if (!file_exists($profile_info_path) || !is_readable($profile_info_path)) {
+      throw new AutodeployException(
+        'AUTODEPLOY_REQUIRED_FILES_MISSING',
+        dt('The specified `.info` file could not be read: @path',
+          array('@path' => $profile_info_path)));
+    }
+
+    $profile_info = drush_drupal_parse_info_file($profile_info_path);
+
+    if (empty($profile_info['version'])) {
+      throw new AutodeployException(
+        'AUTODEPLOY_VERSION_MISSING',
+        dt('No version has been declared in the profile `.info` file: @path',
+          array('@path' => $profile_info_path)));
+    }
+
+    $profile_versions[$profile_name] = $profile_info['version'];
   }
 
-  $profile_info = drush_drupal_parse_info_file($profile_info_path);
-
-  if (empty($profile_info['version'])) {
-    throw new AutodeployException(
-      'AUTODEPLOY_VERSION_MISSING',
-      dt('No version has been declared in the profile `.info` file: @path',
-        array('@path' => $profile_info_path)));
-  }
-
-  return $profile_info['version'];
+  return $profile_versions[$profile_name];
 }
 
 /**

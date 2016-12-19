@@ -112,7 +112,7 @@ function _pantheon_autodeploy_git_add_all($working_repo_path) {
  *   The message to use for the commit.
  * @param string $author
  *   The name of the author to use for the commit, in
- *   "A U Thor <author@example.com> format".
+ *   "A U Thor <author@example.com>" format.
  *
  * @throws AutodeployException
  *   If the staging or commit operations fail.
@@ -209,7 +209,7 @@ function _pantheon_autodeploy_git_tag_commit($working_repo_path, $commit_hash,
 function _pantheon_autodeploy_git_push($working_repo_path, $remote = 'origin',
                                        $branch = 'master') {
   $command_prefix = PAAU_GIT_WITH_REPO_PATTERN . ' ';
-  $push_command   = $command_prefix . 'push %2$s %3$s';
+  $push_command   = $command_prefix . 'push --tags %2$s %3$s';
 
   if (!drush_shell_exec($push_command, $working_repo_path, $remote, $branch)) {
     throw new AutodeployException(
