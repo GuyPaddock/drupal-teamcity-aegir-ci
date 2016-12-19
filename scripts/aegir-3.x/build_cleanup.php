@@ -2,45 +2,60 @@
 <?php
 /**
  * @file
- * TeamCity Drupal CI build clean-up script.
+ *   TeamCity Drupal CI build clean-up script for Aegir 3.x.
  *
- * Add this script to Aegir's crontab to automate clean-up of the sites and
- * platforms from stale CI builds.
+ *   Add this script to Aegir's crontab to automate clean-up of the sites and
+ *   platforms from stale CI builds.
  *
- * The script must be passed a "platform prefix" as its only argument. The
- * platform prefix is simply the first part of the path to builds that
- * you want to clean-up automatically.
+ *   The script must be passed a "platform prefix" as its only argument. The
+ *   platform prefix is simply the first part of the path to builds that
+ *   you want to clean-up automatically.
  *
- * For example:
- * /var/aegir/platforms/sample_7x
+ *   For example:
+ *   /var/aegir/platforms/sample_7x
  *
- * The above would clean-up builds like "/var/aegir/platforms/sample_7x_b1",
- * "/var/aegir/platforms/sample_7x_b2", and so on that are older than 7 days.
+ *   The above would clean-up builds like "/var/aegir/platforms/sample_7x_b1",
+ *   "/var/aegir/platforms/sample_7x_b2", and so on that are older than 7 days.
  *
- * To clean-up all CI builds, just pass the platform root folder path:
- * /var/aegir/platforms
+ *   To clean-up all CI builds, just pass the platform root folder path:
+ *   /var/aegir/platforms
  *
- * This script has safeguards to prevent removing the "hostmaster" platform,
- * but it's not foolproof. In general, avoid passing this script the path
- * to the hostmaster platform for best results.
+ *   This script has safeguards to prevent removing the "hostmaster" platform,
+ *   but it's not foolproof. In general, avoid passing this script the path
+ *   to the hostmaster platform for best results.
  *
- * This script will only remove builds owned by the "teamcity" Aegir client.
- * To prevent a build from being cleaned-up, simply assign it to a different
- * client and it will be ignored. (This is the best practice if a developer
- * needs to keep a build around longer than normal.)
+ *   This script will only remove builds owned by the "teamcity" Aegir client.
+ *   To prevent a build from being cleaned-up, simply assign it to a different
+ *   client and it will be ignored. (This is the best practice if a developer
+ *   needs to keep a build around longer than normal.)
  *
- * This script cleans-up platforms owned by the TeamCity client once they
- * no longer have any sites. As such, platforms will not be deleted
- * immediately, but usually will be deleted on the next run after the sites
- * on the platform have been marked deleted.
+ *   This script cleans-up platforms owned by the TeamCity client once they
+ *   no longer have any sites. As such, platforms will not be deleted
+ *   immediately, but usually will be deleted on the next run after the sites
+ *   on the platform have been marked deleted.
  *
- * In case you need to resurrect a deleted site, it is worth noting that sites
- * this script purges will typically still be backed-up to Aegir's back-up
- * folder (/var/aegir/backups). This script does not clean-up any files
- * written there, though you can combine this script with a tmpreaper
- * cronjob if you wish.
+ *   In case you need to resurrect a deleted site, it is worth noting that sites
+ *   this script purges will typically still be backed-up to Aegir's back-up
+ *   folder (/var/aegir/backups). This script does not clean-up any files
+ *   written there, though you can combine this script with a tmpreaper
+ *   cronjob if you wish.
  *
- * @author Guy Paddock (guy.paddock@redbottledesign.com)
+ *   Copyright (C) 2015-2017  Red Bottle Design, LLC
+ *
+ *   This program is free software: you can redistribute it and/or modify it
+ *   under the terms of the GNU General Public License as published by the Free
+ *   Software Foundation, either version 3 of the License, or (at your option)
+ *   any later version.
+ *
+ *   This program is distributed in the hope that it will be useful, but WITHOUT
+ *   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ *   more details.
+ *
+ *   You should have received a copy of the GNU General Public License along
+ *   with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @author Guy Paddock (guy@redbottledesign.com)
  */
 
 // Client name that owns CI builds
