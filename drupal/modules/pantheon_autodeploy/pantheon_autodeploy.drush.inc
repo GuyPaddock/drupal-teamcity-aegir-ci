@@ -496,21 +496,26 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
       array('@profile_name' => $profile_name)));
 
   if (!is_file($drush_make_path) && !is_readable($drush_make_path)) {
-    throw new AutodeployException(
-      'AUTODEPLOY_REQUIRED_FILES_MISSING',
+    // It's unusual, but not fatal, to be missing a `drupal-org.make` file.
+    drush_log(
       dt('The Drush make file could not be located at: @path',
-        array('@path' => $drush_make_path)));
+        array('@path' => $drush_make_path)),
+      'warning');
+
+    $dev_drush_make_info = array();
+  }
+  else {
+    $dev_drush_make_info =
+      _pantheon_autodeploy_parse_dev_only_info($drush_make_path);
   }
 
   if (!is_file($profile_info_path) && !is_readable($profile_info_path)) {
+    // It IS fatal to be missing the profile `.info` file, though.
     throw new AutodeployException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The install profile `.info` file could not be located at: @path',
         array('@path' => $profile_info_path)));
   }
-
-  $dev_drush_make_info =
-    _pantheon_autodeploy_parse_dev_only_info($drush_make_path);
 
   $dev_profile_info =
     _pantheon_autodeploy_parse_dev_only_info($profile_info_path);
