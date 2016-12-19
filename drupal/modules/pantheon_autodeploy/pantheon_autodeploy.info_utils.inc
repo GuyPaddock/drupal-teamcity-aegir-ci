@@ -58,6 +58,74 @@ function pantheon_autodeploy_get_install_profile_info($profile, $info_filename =
 }
 
 /**
+ * Gets the branch-specific deployment settings from the specified installation
+ * profile.
+ * 
+ * <p>If the installation profile has no deployment settings for the specified
+ * branch, or any deployment settings whatsoever, an empty array is
+ * returned.</p>
+ * 
+ * @param string $profile_name
+ *   The name of the installation profile for which settings are desired.
+ * @param string $branch
+ *   The name of the branch for which settings are desired.
+ * 
+ * @return array
+ *   Either the array of deployment settings, or <code>NULL</code> if there are
+ *   no settings for the branch. The settings can include the following keys:
+ *   - target
+ *     - site-id: The UUID of the target Pantheon site.
+ *     - environment: The name of the Pantheon environment (dev, test, live).
+ *   - tag-after-commit: Whether or not to tag commits with release numbers.
+ */
+function _pantheon_autodeploy_get_settings_for($profile_name, $branch) {
+  $result = NULL;
+
+  $system_defaults = array(
+    'target' => array(
+      'site-id'     => NULL,
+      'environment' => NULL,
+    ),
+    'tag-after-commit' => FALSE,
+  );
+
+  $profile_info = pantheon_autodeploy_get_install_profile_info($profile_name);
+
+  if (!empty($profile_info['autodeploy']['branches'])) {
+    $branches   = $profile_info['autodeploy']['branches'];
+    $have_match = FALSE;
+
+    foreach ($branches as $branch_pattern => $settings) {
+      $branch_regex = "!^{$branch_pattern}$!";
+
+      if (preg_match($branch_regex, $branch)) {
+        $result     = $settings;
+        $have_match = TRUE;
+        break;
+      }
+    }
+
+    if ($have_match) {
+      if (!empty($profile_info['autodeploy']['defaults'])) {
+        $profile_defaults = $profile_info['autodeploy']['defaults'];
+      }
+      else {
+        $profile_defaults = array();
+      }
+
+      $result =
+        array_replace_recursive($system_defaults, $profile_defaults, $result);
+
+      drush_log(
+        dt('Using branch settings: @settings',
+          array('@settings' => var_export($result, TRUE))));
+    }
+  }
+
+  return $result;
+}
+
+/**
  * Parses the portion of the specified `.info` file that has been demarcated
  * by "developmentOnly" tags.
  *

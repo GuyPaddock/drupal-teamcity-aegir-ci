@@ -92,14 +92,9 @@ function pantheon_autodeploy_drush_command() {
  *   If the deployment fails.
  */
 function drush_pantheon_autodeploy($site_id = NULL) {
-  $info_based =
-    drush_get_option(PAAU_OPTION_USE_INFO, FALSE);
-
-  $target_environment =
-    drush_get_option(PAAU_OPTION_TARGET_ENV, PAAU_PANTHEON_ENV_DEV);
-
-  $profile_name =
-    drush_get_option(PAAU_OPTION_PROFILE, NULL);
+  $use_settings_for_branch = drush_get_option(PAAU_OPTION_USE_INFO, FALSE);
+  $target_environment      = drush_get_option(PAAU_OPTION_TARGET_ENV, NULL);
+  $profile_name            = drush_get_option(PAAU_OPTION_PROFILE, NULL);
 
   $tag_after_commit =
     _pantheon_autodeploy_value_to_boolean(
@@ -113,11 +108,16 @@ function drush_pantheon_autodeploy($site_id = NULL) {
       $profile_name = $exclusive_profile->name;
     }
 
-    pantheon_autodeploy_validate_args(
-      $site_id, $info_based, $target_environment, $profile_name, $tag_after_commit);
+    pantheon_autodeploy_validate_options_pre_profile_load(
+      $site_id, $use_settings_for_branch, $tag_after_commit, $target_environment, $profile_name);
 
-    pantheon_autodeploy_deploy(
-      $site_id, $info_based, $target_environment, $profile_name, $tag_after_commit);
+    if ($use_settings_for_branch) {
+      pantheon_autodeploy_run_from_info_file($profile_name, $use_settings_for_branch);
+    }
+    else {
+      pantheon_autodeploy_run_from_cli(
+        $site_id, $profile_name, $tag_after_commit, $target_environment);
+    }
   }
   catch (AutodeployException $ex) {
     drush_set_error($ex->getDrushErrorCode(), $ex->getMessage());
@@ -128,28 +128,113 @@ function drush_pantheon_autodeploy($site_id = NULL) {
 }
 
 /**
- * Validates all of the arguments and options being passed to the Pantheon
- * Auto-deploy command.
+ * Runs deployment using the settings for the specified GIT branch in the
+ * specified installation profile.
+ *
+ * <p>If there are no deployment settings for the branch in the profile,
+ * no deployment occurs.</p>
+ *
+ * @param string $profile_name
+ *   The machine name of the installation profile being deployed.
+ * @param string $branch_name
+ *   The GIT branch name for which settings are desired.
+ *   NOTE: This is the name of the branch in the installation profile source
+ *   repo, not the Pantheon repo.
+ *
+ * @throws AutodeployException
+ *   If the deployment operation fails.
+ */
+function pantheon_autodeploy_run_from_info_file($profile_name, $branch_name) {
+  $branch_settings =
+    _pantheon_autodeploy_get_settings_for($profile_name, $branch_name);
+
+  if ($branch_settings === NULL) {
+    drush_log(
+      dt('No auto-deploy settings specified in @profile, so not deploying.'),
+      'warning');
+  }
+  else {
+    $site_id            = $branch_settings['target']['site-id'];
+    $target_environment = $branch_settings['target']['environment'];
+    $tag_after_commit   = $branch_settings['tag-after-commit'];
+
+    pantheon_autodeploy_validate_options_post_profile_load(
+      $site_id, $target_environment);
+
+    pantheon_autodeploy_run_deployment(
+      $site_id, $profile_name, $tag_after_commit, $target_environment);
+  }
+}
+
+/**
+ * Runs deployment using the provided settings from CLI.
  *
  * @param string $site_id
  *   The UUID of the target Pantheon site.
- * @param boolean $info_based
- *   Whether or not deployment settings should come from the source profile.
+ *   after being committed.
+ * @param string $profile_name
+ *   The machine name of the installation profile being deployed.
+ * @param string $target_environment
+ *   The name of the Pantheon environment to which the site should be deployed.
+ * @param boolean $tag_after_commit
+ *   Whether or not to tag commits with the installation profile version.
+ *
+ * @throws AutodeployException
+ *   If the deployment operation fails.
+ */
+function pantheon_autodeploy_run_from_cli($site_id, $profile_name,
+                                          $tag_after_commit,
+                                          $target_environment) {
+  // Default this here so we can differentiate between the default and the
+  // user having set it from the CLI when we're reading options from `.info`.
+  if (empty($target_environment)) {
+    $target_environment = PAAU_PANTHEON_ENV_DEV;
+  }
+
+  pantheon_autodeploy_validate_options_post_profile_load(
+    $site_id, $target_environment);
+
+  pantheon_autodeploy_run_deployment(
+    $site_id, $profile_name, $tag_after_commit, $target_environment);
+}
+
+/**
+ * Validates that required arguments and options are being passed to the
+ * Pantheon Auto-deploy command on the command-line.
+ *
+ * <p>This only verifies argument values that can be examined prior to
+ * obtaining values from the installation profile itself, in case the user
+ * is electing to use an `.info`-based approach.</p>
+ *
+ * @param string $site_id
+ *   The UUID of the target Pantheon site.
+ * @param boolean $use_settings_for_branch
+ *   The name of the branch for which settings should come from the source
+ *   profile; or, <code>NULL</code>, if settings should come from CLI.
+ * @param boolean $tag_after_commit
+ *   Whether or not to tag commits with the installation profile version.
  * @param string $target_environment
  *   The name of the Pantheon environment to which the site should be deployed
  *   after being committed.
  * @param string $profile_name
  *   The machine name of the installation profile being deployed.
- * @param boolean $tag_after_commit
- *   Whether or not to tag commits with the installation profile version.
  *
  * @throws AutodeployException
  *   If any arguments are invalid.
  */
-function pantheon_autodeploy_validate_args($site_id, $info_based,
-                                           $target_environment, $profile_name,
-                                           $tag_after_commit) {
-  if ($info_based) {
+function pantheon_autodeploy_validate_options_pre_profile_load(
+                                          $site_id,
+                                          $use_settings_for_branch,
+                                          $tag_after_commit,
+                                          $target_environment,
+                                          $profile_name) {
+  if ($use_settings_for_branch) {
+    if (!empty($site_id)) {
+      throw new AutodeployException(
+        'AUTODEPLOY_ARGUMENT_REQUIRED',
+        dt('When using settings from the profile `.info` file, you cannot specify the Pantheon site UUID.'));
+    }
+
     if (!empty($target_environment)) {
       throw new AutodeployException(
         'AUTODEPLOY_OPTION_CONFLICT',
@@ -163,29 +248,10 @@ function pantheon_autodeploy_validate_args($site_id, $info_based,
     }
   }
   else {
-    if (empty($site_id) || !preg_match(PAAU_UUID_PATTERN, $site_id)) {
+    if (empty($site_id)) {
       throw new AutodeployException(
         'AUTODEPLOY_ARGUMENT_REQUIRED',
         dt('When not using settings from the profile `.info` file, you need to specify a valid Pantheon site UUID (for example, `7ea62566-14c1-47e1-93f1-223759193e9e`).'));
-    }
-
-    if (!empty($target_environment)) {
-      $allowed_environments =
-        array(
-          PAAU_PANTHEON_ENV_DEV,
-          PAAU_PANTHEON_ENV_TEST,
-          PAAU_PANTHEON_ENV_LIVE,
-        );
-
-      if (!in_array($target_environment, $allowed_environments)) {
-        throw new AutodeployException(
-          'AUTODEPLOY_OPTION_REQUIRED',
-          dt('`@name` is not a valid Pantheon environment name. Valid environments are: [@types]',
-            array(
-              '@name'  => $target_environment,
-              '@types' => implode(', ', $allowed_environments),
-            )));
-      }
     }
   }
 
@@ -211,25 +277,68 @@ function pantheon_autodeploy_validate_args($site_id, $info_based,
 }
 
 /**
+ * Validates remaining options before executing deployment.
+ *
+ * <p>This complements
+ * <code>pantheon_autodeploy_validate_pre_profile_load()</code> by handling any
+ * validations that have to happen after settings are obtained from the
+ * installation profile, in case the user is electing to use an `.info`-based
+ * approach.</p>
+ *
+ * @param string $site_id
+ *   The UUID of the target Pantheon site.
+ * @param string $target_environment
+ *   The name of the Pantheon environment to which the site should be deployed
+ *   after being committed.
+ *
+ * @throws AutodeployException
+ *   If any arguments are invalid.
+ */
+function pantheon_autodeploy_validate_options_post_profile_load($site_id, $target_environment) {
+  if (empty($site_id) || !preg_match(PAAU_UUID_PATTERN, $site_id)) {
+    throw new AutodeployException(
+      'AUTODEPLOY_ARGUMENT_REQUIRED',
+      dt('You need to specify a valid Pantheon site UUID (for example, `7ea62566-14c1-47e1-93f1-223759193e9e`).'));
+  }
+
+  if (!empty($target_environment)) {
+    $allowed_environments =
+      array(
+        PAAU_PANTHEON_ENV_DEV,
+        PAAU_PANTHEON_ENV_TEST,
+        PAAU_PANTHEON_ENV_LIVE,
+      );
+
+    if (!in_array($target_environment, $allowed_environments)) {
+      throw new AutodeployException(
+        'AUTODEPLOY_OPTION_REQUIRED',
+        dt('`@name` is not a valid Pantheon environment name. Valid environments are: [@types]',
+          array(
+            '@name'  => $target_environment,
+            '@types' => implode(', ', $allowed_environments),
+          )));
+    }
+  }
+}
+
+/**
  * Runs the deployment operation.
  *
  * @param string $site_id
  *   The UUID of the target Pantheon site.
- * @param boolean $info_based
- *   Whether or not deployment settings should come from the source profile.
- * @param string $target_environment
- *   The name of the Pantheon environment to which the site should be deployed
  *   after being committed.
  * @param string $profile_name
  *   The machine name of the installation profile being deployed.
  * @param boolean $tag_after_commit
  *   Whether or not to tag commits with the installation profile version.
+ * @param string $target_environment
+ *   The name of the Pantheon environment to which the site should be deployed.
  *
  * @throws AutodeployException
  *   If the deployment fails.
  */
-function pantheon_autodeploy_deploy($site_id, $info_based, $target_environment,
-                                    $profile_name, $tag_after_commit) {
+function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
+                                            $target_environment) {
   drush_log(
     dt('Checking out site `@site_id` from Pantheon.',
       array('@site_id' => $site_id)));

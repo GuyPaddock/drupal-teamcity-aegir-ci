@@ -30,10 +30,10 @@ dependencies[] = rdf
 ; Installation Profile Features
 ;===============================================================================
 
-;===============================================================================
-; Features for Development (DISABLE FOR RELEASE)
-;===============================================================================
 ; <developmentOnly>
+;===============================================================================
+; Features for Development (DISABLED FOR PRODUCTION RELEASES)
+;===============================================================================
 dependencies[] = sample_devel
 ; </developmentOnly>
 
@@ -128,16 +128,17 @@ blocks[admin_user_new][visibility] = 0
 blocks[admin_user_new][pages] = ''
 blocks[admin_user_new][cache] = -1
 
+; <developmentOnly>
 ;===============================================================================
 ; Pantheon Auto-deploy settings
 ;===============================================================================
-autodeploy[target-site][id] = 024a0820-946c-4c01-878f-d828d7abb08b
+autodeploy[defaults][target][site-id] = "024a0820-946c-4c01-878f-d828d7abb08b"
+autodeploy[defaults][tag-after-commit] = false
 
-autodeploy[branches][develop][site] = "autodeploy-test"
-autodeploy[branches][develop][environment] = dev
+autodeploy[branches][develop][target][environment] = dev
 
-autodeploy[branches][release/*][site] = "autodeploy-test"
-autodeploy[branches][release/*][environment] = test
+autodeploy[branches][release/.*][target][environment] = test
 
-autodeploy[branches][master][site] = "autodeploy-test"
-autodeploy[branches][master][environment] = live
+autodeploy[branches][master][target][environment] = live
+autodeploy[branches][master][tag-after-commit] = true
+; </developmentOnly>
