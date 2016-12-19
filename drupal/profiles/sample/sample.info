@@ -157,9 +157,6 @@ autodeploy[defaults][target][site-id] = "024a0820-946c-4c01-878f-d828d7abb08b"
 autodeploy[defaults][tag-after-commit] = false
 
 autodeploy[branches][develop][target][environment] = dev
-
 autodeploy[branches][release/.*][target][environment] = test
-
 autodeploy[branches][master][target][environment] = live
-autodeploy[branches][master][tag-after-commit] = true
 ; </developmentOnly>
