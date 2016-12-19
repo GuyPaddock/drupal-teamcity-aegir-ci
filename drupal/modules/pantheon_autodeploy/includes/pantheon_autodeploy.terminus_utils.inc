@@ -42,6 +42,8 @@ function _pantheon_autodeploy_pantheon_deploy_site($site_id, $environment, $mess
   // We silently ignore "dev" because pushing via GIT accomplishes this
   // automatically.
   if ($environment != 'dev') {
+    _pantheon_autodeploy_ensure_pantheon_authenticated();
+
     // Terminus works with the name of the site instead of UUID
     $site_name      = _pantheon_autodeploy_pantheon_site_id_to_name($site_id);
     $deploy_command = 'terminus site deploy --site=%s --env=%s --note=%s --cc';
@@ -135,6 +137,8 @@ function _pantheon_autodeploy_pantheon_get_site_map() {
   static $id_to_name_map = NULL;
 
   if (empty($id_to_name_map)) {
+    _pantheon_autodeploy_ensure_pantheon_authenticated();
+
     // $1 => Name
     // $2 => UUID
     $site_list_command = 'terminus sites list | awk \'{ print $1 "," $2; }\'';
@@ -161,6 +165,35 @@ function _pantheon_autodeploy_pantheon_get_site_map() {
   }
 
   return $id_to_name_map;
+}
+
+/**
+ * Ensures we have a valid session through Terminus to Pantheon.
+ *
+ * <p>This only attempts authentication once per command run. It must be run
+ * at least once to refresh access tokens, as they seem to expire after a few
+ * hours.</p>
+ *
+ * @throws DrushException
+ *   If authentication through Terminus fails.
+ */
+function _pantheon_autodeploy_ensure_pantheon_authenticated() {
+  static $authenticated = FALSE;
+
+  if (!$authenticated) {
+    $authenticate_command = 'terminus auth login';
+
+    if (!drush_shell_exec($authenticate_command)) {
+      throw new DrushException(
+        'AUTODEPLOY_PANTHEON_LOGIN_FAILED',
+        dt('Failed to authenticate with Pantheon: @output',
+          array(
+            '@output' => _pantheon_autodeploy_get_shell_output(),
+          )));
+    }
+
+    $authenticated = TRUE;
+  }
 }
 
 /**
