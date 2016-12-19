@@ -46,6 +46,7 @@ projects[uuid_menu_links][download][branch] = "7.x-1.x"
 ;===============================================================================
 ; Modules for Development
 ;===============================================================================
+; <developmentOnly>
 projects[devel][type] = "module"
 projects[devel][version] = "1.5"
 projects[devel][subdir] = "contrib"
@@ -64,6 +65,7 @@ projects[forminspect][subdir] = "contrib"
 projects[simplehtmldom][type] = "module"
 projects[simplehtmldom][version] = "1.12"
 projects[simplehtmldom][subdir] = "contrib"
+; </developmentOnly>
 
 ;===============================================================================
 ; Modules for E-Commerce

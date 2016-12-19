@@ -33,7 +33,9 @@ dependencies[] = rdf
 ;===============================================================================
 ; Features for Development (DISABLE FOR RELEASE)
 ;===============================================================================
+; <developmentOnly>
 dependencies[] = sample_devel
+; </developmentOnly>
 
 ;===============================================================================
 ; Profile-wide System Variables for Profiler
@@ -125,3 +127,17 @@ blocks[admin_user_new][region] = dashboard_sidebar
 blocks[admin_user_new][visibility] = 0
 blocks[admin_user_new][pages] = ''
 blocks[admin_user_new][cache] = -1
+
+;===============================================================================
+; Pantheon Auto-deploy settings
+;===============================================================================
+autodeploy[target-site][id] = 024a0820-946c-4c01-878f-d828d7abb08b
+
+autodeploy[branches][develop][site] = "autodeploy-test"
+autodeploy[branches][develop][environment] = dev
+
+autodeploy[branches][release/*][site] = "autodeploy-test"
+autodeploy[branches][release/*][environment] = test
+
+autodeploy[branches][master][site] = "autodeploy-test"
+autodeploy[branches][master][environment] = live
