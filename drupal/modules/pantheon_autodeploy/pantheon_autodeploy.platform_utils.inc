@@ -85,7 +85,7 @@ function _pantheon_autodeploy_locate_exclusive_install_profile() {
   $profiles = _pantheon_autodeploy_get_install_profiles();
 
   foreach ($profiles as $profile) {
-    $info_file_data = _pantheon_autodeploy_get_install_profile_info($profile);
+    $info_file_data = pantheon_autodeploy_get_install_profile_info($profile);
 
     if (!empty($info_file_data['exclusive'])) {
       $result = $profile;

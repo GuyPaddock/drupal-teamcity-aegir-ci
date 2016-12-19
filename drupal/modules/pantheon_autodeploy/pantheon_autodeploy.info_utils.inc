@@ -32,7 +32,7 @@
  * @throws InvalidArgumentException
  *   If the specified profile does not exist.
  */
-function _pantheon_autodeploy_get_install_profile_info($profile, $info_filename = NULL) {
+function pantheon_autodeploy_get_install_profile_info($profile, $info_filename = NULL) {
   if (is_object($profile)) {
     $profile_object = $profile;
   }
