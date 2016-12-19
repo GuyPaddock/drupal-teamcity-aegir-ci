@@ -99,7 +99,7 @@ function drush_pantheon_autodeploy($site_id = NULL) {
   $profile_name            = drush_get_option(PAAU_OPTION_PROFILE, NULL);
 
   $tag_after_commit =
-    _pantheon_autodeploy_value_to_boolean(
+    _pantheon_autodeploy_convert_value_to_boolean(
       drush_get_option(PAAU_OPTION_TAG_AFTER_COMMIT, FALSE));
 
   try {
@@ -658,7 +658,7 @@ function _pantheon_autodeploy_get_source_files($profile_name) {
       TRUE);          // $include_dot_files
 
   $profile_directory =
-    _pantheon_autodeploy_path_to_file_object($profile_path);
+    _pantheon_autodeploy_convert_path_to_file_object($profile_path);
 
   $files_to_copy[$profile_directory->filename] = $profile_directory;
 
@@ -694,7 +694,7 @@ function _pantheon_autodeploy_regex_escape($string) {
  * @return bool
  *   The boolean value of the value.
  */
-function _pantheon_autodeploy_value_to_boolean($value) {
+function _pantheon_autodeploy_convert_value_to_boolean($value) {
   $lowercase_value = strtolower($value);
 
   return (($value === 1) ||

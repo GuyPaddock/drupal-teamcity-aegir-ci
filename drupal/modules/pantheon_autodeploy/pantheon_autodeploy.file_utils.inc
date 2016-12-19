@@ -51,7 +51,7 @@ function _pantheon_autodeploy_mk_parent_paths($file_path) {
  * @return stdClass
  *   The resulting file object.
  */
-function _pantheon_autodeploy_path_to_file_object($path) {
+function _pantheon_autodeploy_convert_path_to_file_object($path) {
   $base_name = basename($path);
 
   $file = new stdClass();
