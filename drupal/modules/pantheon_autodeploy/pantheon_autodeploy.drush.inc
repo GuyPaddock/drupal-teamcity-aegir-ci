@@ -496,7 +496,7 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
       array('@profile_name' => $profile_name)));
 
   if (!is_file($drush_make_path) && !is_readable($drush_make_path)) {
-    drush_log(
+    throw new AutodeployException(
       'AUTODEPLOY_REQUIRED_FILES_MISSING',
       dt('The Drush make file could not be located at: @path',
         array('@path' => $drush_make_path)));
