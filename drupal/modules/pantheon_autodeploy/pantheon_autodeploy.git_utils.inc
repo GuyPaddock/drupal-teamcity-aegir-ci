@@ -221,15 +221,3 @@ function _pantheon_autodeploy_git_push($working_repo_path, $remote = 'origin',
         )));
   }
 }
-
-/**
- * Gets the output from the last command in a single, multi-line string.
- *
- * @return string
- *   The ouput from the last shell command.
- */
-function _pantheon_autodeploy_get_shell_output() {
-  $last_output = drush_shell_exec_output();
-
-  return implode(PHP_EOL, $last_output);
-}

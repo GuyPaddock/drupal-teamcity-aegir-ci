@@ -7,12 +7,14 @@
  */
 require_once('pantheon_autodeploy.constants.inc');
 
+require_once('AutodeployException.php');
+
 require_once('pantheon_autodeploy.file_utils.inc');
 require_once('pantheon_autodeploy.git_utils.inc');
 require_once('pantheon_autodeploy.info_utils.inc');
 require_once('pantheon_autodeploy.platform_utils.inc');
-
-require_once('AutodeployException.php');
+require_once('pantheon_autodeploy.shell_utils.inc');
+require_once('pantheon_autodeploy.terminus_utils.inc');
 
 //==============================================================================
 // Drush standard interface hooks
