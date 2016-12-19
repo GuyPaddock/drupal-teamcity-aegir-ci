@@ -24,7 +24,9 @@ api = 2
 ; Modules
 ; --------
 
-;== Modules for Content Import/Export
+;===============================================================================
+; Modules for Content Import/Export
+;===============================================================================
 projects[migrate][type] = "module"
 projects[migrate][version] = "2.7"
 projects[migrate][subdir] = "contrib"
@@ -41,7 +43,9 @@ projects[uuid_menu_links][download][url] = "http://git.drupal.org/sandbox/aspili
 projects[uuid_menu_links][download][revision] = 7fceaf8e5d46c2ab2bf36b97b2bc89a2b1d21d17
 projects[uuid_menu_links][download][branch] = "7.x-1.x"
 
-; == Modules for Development
+;===============================================================================
+; Modules for Development
+;===============================================================================
 projects[devel][type] = "module"
 projects[devel][version] = "1.5"
 projects[devel][subdir] = "contrib"
@@ -61,27 +65,32 @@ projects[simplehtmldom][type] = "module"
 projects[simplehtmldom][version] = "1.12"
 projects[simplehtmldom][subdir] = "contrib"
 
+;===============================================================================
 ; Modules for E-Commerce
+;===============================================================================
 
-; == Modules for API
+;===============================================================================
+; Modules for API
+;===============================================================================
 projects[date][type] = "module"
-projects[date][version] = "2.8"
+projects[date][version] = "2.9"
 projects[date][subdir] = "contrib"
-projects[date][patch][] = "https://www.drupal.org/files/issues/date_migrate_generates-1888268-6.patch"
 
 projects[entity][type] = "module"
-projects[entity][version] = "1.6"
+projects[entity][version] = "1.8"
 projects[entity][subdir] = "contrib"
 
 projects[libraries][type] = "module"
-projects[libraries][version] = "2.2"
+projects[libraries][version] = "2.3"
 projects[libraries][subdir] = "contrib"
 
 projects[token][type] = "module"
 projects[token][version] = "1.6"
 projects[token][subdir] = "contrib"
 
-; == Modules for Layout and Site Structure
+;===============================================================================
+; Modules for Layout and Site Structure
+;===============================================================================
 projects[context][type] = "module"
 projects[context][version] = "3.6"
 projects[context][subdir] = "contrib"
@@ -139,24 +148,9 @@ projects[uuid_features][type] = "module"
 projects[uuid_features][version] = "1.0-alpha4"
 projects[uuid_features][subdir] = "contrib"
 
-;; Commented out for now, since this is retrieved by TeamCity now.
-; NOTE: This requires the Drush HG Make module
-;projects[basic_image_setup][type] = "module"
-;projects[basic_image_setup][version] = "1.0-beta1"
-;projects[basic_image_setup][subdir] = "features"
-;projects[basic_image_setup][download][type] = hg
-;projects[basic_image_setup][download][url] = "https://hermes.redbottledesign.com/Drupal/7/Features/RBD/basic_image_setup"
-
-;; Commented out for now, since this is retrieved by TeamCity now.
-; NOTE: This requires the Drush HG Make module
-;projects[standard_content_setup][type] = "module"
-;projects[standard_content_setup][version] = "1.0-beta1"
-;projects[standard_content_setup][subdir] = "features"
-;projects[standard_content_setup][download][type] = hg
-;projects[standard_content_setup][download][url] = "https://hermes.redbottledesign.com/Drupal/7/Features/RBD/standard_content_setup"
-
-; == Modules for Search and SEO
-
+;===============================================================================
+; Modules for Search and SEO
+;===============================================================================
 projects[search_api][type] = "module"
 projects[search_api][version] = "1.14"
 projects[search_api][subdir] = "contrib"
@@ -173,18 +167,13 @@ projects[xmlsitemap][type] = "module"
 projects[xmlsitemap][version] = "2.2"
 projects[xmlsitemap][subdir] = "contrib"
 
-; == Modules for Social Integration / Sharing
+;===============================================================================
+; Modules for Social Integration / Sharing
+;===============================================================================
 
-; == Modules for Permission Management
-
-;; Commented out for now, since this is retrieved by TeamCity now.
-; NOTE: This requires the Drush HG Make module
-;projects[administration_support][type] = "module"
-;projects[administration_support][subdir] = "features"
-;projects[administration_support][version] = "1.1-beta1"
-;projects[administration_support][download][type] = hg
-;projects[administration_support][download][url] = "https://hermes.redbottledesign.com/Drupal/7/Features/RBD/administration_support"
-
+;===============================================================================
+; Modules for Permission Management
+;===============================================================================
 ; Dev is needed for DDO-923882
 projects[administerusersbyrole][type] = "module"
 projects[administerusersbyrole][subdir] = "contrib"
@@ -218,7 +207,9 @@ projects[user_settings_access][version] = "1.0"
 projects[user_settings_access][patch][] = "https://www.drupal.org/files/user_settings_access-apply_coding_standards-2096901-1.patch"
 projects[user_settings_access][patch][] = "https://www.drupal.org/files/user_settings_access-restrict_account_fields_and_display-2054645-18.patch"
 
-; == Modules for Usability
+;===============================================================================
+; Modules for Usability
+;===============================================================================
 projects[diff][type] = "module"
 projects[diff][version] = "3.2"
 projects[diff][subdir] = "contrib"
@@ -270,9 +261,12 @@ projects[typogrify][subdir] = "contrib"
 
 ; Libraries
 ; ---------
+; We're pulling down dev because trying to download the library as a project
+; puts it in the wrong spot.
 libraries[profiler][type] = "library"
-libraries[profiler][download][type] = "get"
-libraries[profiler][download][url] = "http://ftp.drupal.org/files/projects/profiler-7.x-2.0-beta2.tar.gz"
+libraries[profiler][download][type] = git
+libraries[profiler][download][branch] = "7.x-2.x"
+libraries[profiler][download][revision] = 2ed21403fedb82df3a82f09d28f1f8b1a9bf2b67
 libraries[profiler][patch][] = "https://www.drupal.org/files/issues/profiler-add-ability-to-add-roles-2145695-4.patch"
 libraries[profiler][patch][] = "https://www.drupal.org/files/issues/profiler-support_non_custom_blocks-2418273-5.patch"
 libraries[profiler][patch][] = "https://www.drupal.org/files/issues/profiler-site_pre_and_post_install_hooks-2418335-6.patch"

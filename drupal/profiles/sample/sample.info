@@ -26,36 +26,18 @@ dependencies[] = field_ui
 dependencies[] = file
 dependencies[] = rdf
 
-; == Installation Profile Features
+;===============================================================================
+; Installation Profile Features
+;===============================================================================
 
-; == Features for Development (DISABLE FOR RELEASE)
+;===============================================================================
+; Features for Development (DISABLE FOR RELEASE)
+;===============================================================================
 dependencies[] = sample_devel
 
-; == Modules for API
-dependencies[] = entity
-dependencies[] = libraries
-dependencies[] = token
-
-; == Modules for Site Structure
-; dependencies[] = standard_content_setup   ; Optional
-dependencies[] = features
-dependencies[] = views
-; dependencies[] = basic_image_setup        ; Optional
-
-; == Modules for SEO
-dependencies[] = xmlsitemap
-
-; == Modules for Permission Management
-; dependencies[] = administration_support   ; Optional
-
-; == Modules for Usability
-dependencies[] = diff
-; dependencies[] = markdown_text_formatting ; Optional
-dependencies[] = media
-
-; == Profiler settings
-
-; Theme settings
+;===============================================================================
+; Profile-wide System Variables for Profiler
+;===============================================================================
 theme = bartik
 
 variables[admin_theme] = seven
