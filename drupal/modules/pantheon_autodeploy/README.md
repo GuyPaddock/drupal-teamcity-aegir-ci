@@ -34,7 +34,7 @@ This extension works by:
 ### Additional Requirements
 If you will be using Pantheon Auto-deploy, you must ensure that the following
 commands are also installed on the server and accessible to the account
-performing deployments (e.g. `aegir` or `teamcity`):
+performing deployments (i.e. `teamcity`):
 - [Drush](http://www.drush.org/en/master/) (of course)
 - [GIT](https://git-scm.com/)
 - [Pantheon Terminus CLI](https://github.com/pantheon-systems/terminus)
@@ -46,6 +46,10 @@ Additionally, ensure that you:
    deployments_; AND
 2. Have authenticated with Terminus from the user account _that will be running
    deployments,_ including assigning a machine key.
+
+If you followed the steps elsewhere in this repo for TeamCity CI, then
+the user account _that will be running deployments_ is likely `teamcity`,
+**not** `aegir`.
 
 ### How to Use
 Configuration can come from the command-line or be specified in the `.info` file
