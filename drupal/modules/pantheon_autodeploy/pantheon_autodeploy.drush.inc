@@ -362,10 +362,14 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_
   $commit_message =
     pantheon_autodeploy_generate_git_commit_message($profile_version);
 
-  pantheon_autodeploy_commit_and_push_site(
-    $site_repo_path, $commit_message, $profile_version, $tag_after_commit);
+  $files_were_committed =
+    pantheon_autodeploy_commit_and_push_site(
+      $site_repo_path, $commit_message, $profile_version, $tag_after_commit);
 
-  pantheon_autodeploy_deploy_site($site_id, $target_environment, $commit_message);
+  if ($files_were_committed) {
+    pantheon_autodeploy_deploy_site(
+      $site_id, $target_environment, $commit_message);
+  }
 }
 
 /**
@@ -558,6 +562,15 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
  *   <code>$tag_after_commit</code> is <code>FALSE</code>.
  * @param boolean $tag_after_commit
  *   Whether or not to tag commits with the installation profile version.
+ *
+ * @throws InvalidArgumentException
+ *   If the profile does not contain a version number and
+ *   <code>$tag_after_commit</code> is <code>TRUE</code>.
+ * @throws DrushException
+ *   If the commit or tagging operation fails.
+ *
+ * @return boolean
+ *   Whether or not any changes were actually committed.
  */
 function pantheon_autodeploy_commit_and_push_site($site_repo_path,
                                                   $commit_message,
@@ -583,25 +596,37 @@ function pantheon_autodeploy_commit_and_push_site($site_repo_path,
   _pantheon_autodeploy_git_add_all($site_repo_path);
 
   $changes = _pantheon_autodeploy_git_status($site_repo_path);
-  drush_log($changes, 'success');
 
-  $commit_hash =
-    _pantheon_autodeploy_git_commit(
-      $site_repo_path,
-      $commit_message,
-      $author_name);
+  if (empty(trim($changes))) {
+    drush_log(dt('Site files are unchanged -- nothing to deploy.'), 'warning');
 
-  if ($tag_after_commit) {
-    _pantheon_autodeploy_git_tag_commit(
-      $site_repo_path, 
-      $commit_hash, 
-      $profile_version,
-      $commit_message);
+    $committed = FALSE;
   }
-  
-  _pantheon_autodeploy_git_push($site_repo_path);
+  else {
+    drush_log($changes, 'success');
 
-  drush_log(dt('Site checked-in and pushed to Pantheon.'), 'success');
+    $commit_hash =
+      _pantheon_autodeploy_git_commit(
+        $site_repo_path,
+        $commit_message,
+        $author_name);
+
+    if ($tag_after_commit) {
+      _pantheon_autodeploy_git_tag_commit(
+        $site_repo_path,
+        $commit_hash,
+        $profile_version,
+        $commit_message);
+    }
+
+    _pantheon_autodeploy_git_push($site_repo_path);
+
+    $committed = TRUE;
+
+    drush_log(dt('Site checked-in and pushed to Pantheon.'), 'success');
+  }
+
+  return $committed;
 }
 
 /**

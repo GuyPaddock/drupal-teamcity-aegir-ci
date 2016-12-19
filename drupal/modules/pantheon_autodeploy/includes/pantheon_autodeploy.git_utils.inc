@@ -77,7 +77,7 @@ function _pantheon_autodeploy_git_clone_to_temporary_directory($uri, $checkout_h
  */
 function _pantheon_autodeploy_git_status($working_repo_path) {
   $command_prefix = PAAU_GIT_WITH_REPO_PATTERN . ' ';
-  $status_command = $command_prefix . 'status';
+  $status_command = $command_prefix . 'status --porcelain';
 
   if (!drush_shell_exec($status_command, $working_repo_path)) {
     throw new DrushException(
