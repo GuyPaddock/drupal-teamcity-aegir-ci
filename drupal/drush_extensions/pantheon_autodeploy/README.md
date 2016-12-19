@@ -23,6 +23,7 @@ discussed below._
 
 ## Pantheon Auto-deploy
 This extension works by:
+
 1. Cloning the Pantheon site repo into a local temporary folder.
 2. Copying the appropriate files from the platform in which Drush is being run
    into the site repo.
