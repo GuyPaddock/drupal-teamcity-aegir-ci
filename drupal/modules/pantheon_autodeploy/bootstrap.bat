@@ -1,1 +1,0 @@
-drush "--include=/Users/guy.paddock/GIT Projects/drupal-teamcity-aegir-ci/drupal/modules" pad ssh://codeserver.dev.ABC@codeserver.dev.ABC.drush.in:2222/~/repository.git
