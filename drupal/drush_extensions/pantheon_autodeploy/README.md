@@ -96,28 +96,28 @@ management strategy to Pantheon, as follows:
      This is a safe default because it ensure that there are no
      GIT errors from trying to tag different commits with the same version.
 
-   - The `develop` branch is mapped to the `dev` environment on Pantheon, so
-     any changes commited to `develop` will automatically get deployed to the
-     development environment.
+ - The `develop` branch is mapped to the `dev` environment on Pantheon, so
+   any changes commited to `develop` will automatically get deployed to the
+   development environment.
 
-   - All release branches (e.g. `release/1.0`, `release/1.3`, etc.) are mapped
-     to the `test` environment on Pantheon, so any changes committed during the
-     release process will automatically get deployed to the development and test
-     environments (per Pantheon's required workflow).
+ - All release branches (e.g. `release/1.0`, `release/1.3`, etc.) are mapped
+   to the `test` environment on Pantheon, so any changes committed during the
+   release process will automatically get deployed to the development and test
+   environments (per Pantheon's required workflow).
 
-   - The `master` branch is mapped to the `live` environment on Pantheon, so
-     releases merged into `master` are automatically deployed into the live
-     production environment at the conclusion of the release cycle, and tagged
-     on Pantheon with the release version. As expected, the releases will get
-     deployed to the development and test environments first before being
-     deployed live.
+ - The `master` branch is mapped to the `live` environment on Pantheon, so
+   releases merged into `master` are automatically deployed into the live
+   production environment at the conclusion of the release cycle, and tagged
+   on Pantheon with the release version. As expected, the releases will get
+   deployed to the development and test environments first before being
+   deployed live.
 
-     **NOTE: Deploying to a live environment automatically can be dangerous.
-     See the note that follows about back-ups and best practices for
-     deployments.**
+   **NOTE: Deploying to a live environment automatically can be dangerous.
+   See the note that follows about back-ups and best practices for
+   deployments.**
 
-   - The `<developmentOnly>` tags cause this section to be stripped when
-     releasing the distribution, since it's not publicly useful information.
+ - The `<developmentOnly>` tags cause this section to be stripped when
+   releasing the distribution, since it's not publicly useful information.
 
 ### A Note About Back-ups
 Automatic deployments are an inherently risky prospect, especially if
