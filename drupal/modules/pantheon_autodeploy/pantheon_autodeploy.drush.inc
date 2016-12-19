@@ -100,17 +100,6 @@ function pantheon_autodeploy_drush_command() {
  * Deploys an installation profile as a distribution to a Pantheon instance via
  * GIT.
  *
- * This task performs the following steps:
- *   1. The site repository is cloned bare (i.e. without any files).
- *   2. The installation profile is unpacked into the working copy of the site
- *      repository.
- *   3. Any changes to <code>*.info</code> files that are purely the result of
- *      the Drush make / Drush checkout process for modules are automatically
- *      reverted.
- *   4. The updated site is committed to the site repository and pushed.
- *   5. The site is automatically pushed to the target Pantheon environment
- *      (dev, test, or live).
- *
  * @param string $site_id
  *   Pantheon's UUID for the site.
  *
@@ -224,42 +213,6 @@ function pantheon_autodeploy_run_from_cli($site_id, $profile_name,
     $site_id, $profile_name, $tag_after_commit, $target_environment);
 }
 
-/**
- * Runs the deployment operation.
- *
- * @param string $site_id
- *   The UUID of the target Pantheon site.
- *   after being committed.
- * @param string $profile_name
- *   The machine name of the installation profile being deployed.
- * @param boolean $tag_after_commit
- *   Whether or not to tag commits with the installation profile version.
- * @param string $target_environment
- *   The name of the Pantheon environment to which the site should be deployed.
- *
- * @throws DrushException
- *   If the deployment fails.
- */
-function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
-                                            $target_environment) {
-  $site_repo_path  = pantheon_autodeploy_checkout_site($site_id);
-
-  pantheon_autodeploy_prune_target($site_repo_path, $profile_name);
-  pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
-  pantheon_autodeploy_strip_development_modules($site_repo_path, $profile_name);
-
-  $profile_version =
-    pantheon_autodeploy_get_profile_version($profile_name);
-
-  $commit_message =
-    pantheon_autodeploy_generate_git_commit_message($profile_version);
-
-  pantheon_autodeploy_commit_and_push_site(
-    $site_repo_path, $commit_message, $profile_version, $tag_after_commit);
-
-  pantheon_autodeploy_deploy_site($site_id, $target_environment, $commit_message);
-}
-
 //==============================================================================
 // Pantheon Auto-deploy Argument Validation
 //==============================================================================
@@ -367,6 +320,50 @@ function pantheon_autodeploy_validate_options_post_profile_load($site_id, $targe
 //==============================================================================
 // Public API Methods
 //==============================================================================
+/**
+ * Runs a deployment operation.
+ *
+ * This task performs the following steps:
+ *   1. The site repository is cloned into a local temporary folder.
+ *   2. The installation profile is unpacked into the working copy of the site
+ *      repository.
+ *   3. The updated site is committed to the site repository and pushed.
+ *   4. The site is automatically pushed to the target Pantheon environment
+ *      (dev, test, or live).
+ *
+ * @param string $site_id
+ *   The UUID of the target Pantheon site.
+ *   after being committed.
+ * @param string $profile_name
+ *   The machine name of the installation profile being deployed.
+ * @param boolean $tag_after_commit
+ *   Whether or not to tag commits with the installation profile version.
+ * @param string $target_environment
+ *   The name of the Pantheon environment to which the site should be deployed.
+ *
+ * @throws DrushException
+ *   If the deployment fails.
+ */
+function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
+                                            $target_environment) {
+  $site_repo_path  = pantheon_autodeploy_checkout_site($site_id);
+
+  pantheon_autodeploy_prune_target($site_repo_path, $profile_name);
+  pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
+  pantheon_autodeploy_strip_development_modules($site_repo_path, $profile_name);
+
+  $profile_version =
+    pantheon_autodeploy_get_profile_version($profile_name);
+
+  $commit_message =
+    pantheon_autodeploy_generate_git_commit_message($profile_version);
+
+  pantheon_autodeploy_commit_and_push_site(
+    $site_repo_path, $commit_message, $profile_version, $tag_after_commit);
+
+  pantheon_autodeploy_deploy_site($site_id, $target_environment, $commit_message);
+}
+
 /**
  * Checks-out the GIT repository for the Pantheon site.
  *
