@@ -34,3 +34,12 @@ define('SA_PROFILE_NAME', 'sample');
  * @var string
  */
 define('SA_PROFILE_FRIENDLY_NAME', 'Sample Installation');
+
+/**
+ * Default version number that appears when developing on the profile locally.
+ *
+ * <p><strong>DO NOT MODIFY:</strong> This is not used for production builds,
+ * nor for builds that have run through CI, since the Drush Distro Version-er
+ * automatically fills-in the versions of sub-modules.</p>
+ */
+define('PROFILE_VERSION', '7.x-1.0-dev');
