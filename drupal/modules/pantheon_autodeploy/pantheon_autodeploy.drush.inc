@@ -165,7 +165,11 @@ function pantheon_autodeploy_run_from_info_file($profile_name, $branch_name) {
 
   if ($branch_settings === NULL) {
     drush_log(
-      dt('No auto-deploy settings specified in @profile, so not deploying.'),
+      dt('No auto-deploy settings for `@branch` specified in `@profile`, so not deploying.',
+        array(
+          '@branch'  => $branch_name,
+          '@profile' => $profile_name,
+        )),
       'warning');
   }
   else {
