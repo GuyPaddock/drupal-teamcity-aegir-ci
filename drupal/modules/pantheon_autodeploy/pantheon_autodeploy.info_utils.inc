@@ -51,7 +51,7 @@ function pantheon_autodeploy_get_install_profile_info($profile, $info_filename =
     $info_filename = "{$profile_object->name}.info";
   }
 
-  $profile_path   = dirname($profile->filename);
+  $profile_path   = dirname($profile_object->filename);
   $info_file_path = sprintf("%s/%s", $profile_path, $info_filename);
 
   return drush_drupal_parse_info_file($info_file_path);
