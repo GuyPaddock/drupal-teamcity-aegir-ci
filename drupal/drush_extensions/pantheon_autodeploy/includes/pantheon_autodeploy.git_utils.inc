@@ -44,7 +44,7 @@
  */
 function _pantheon_autodeploy_git_clone_to_temporary_directory($uri, $checkout_head = TRUE) {
   $tmp_directory = drush_tempdir() . '/' . basename($uri);
-  $clone_command = 'git clone --config core.autocrlf=true %s %s';
+  $clone_command = 'git clone --config core.autocrlf=input %s %s';
 
   if (!$checkout_head) {
     $clone_command .= ' --no-checkout';
