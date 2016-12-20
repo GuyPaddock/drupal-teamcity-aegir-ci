@@ -113,4 +113,4 @@ define('PAAU_UUID_PATTERN', '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9
  * The regular expression used to identify the section of an `.info` file that
  * applies only to development builds.
  */
-define('PAAU_DEV_ONLY_PATTERN', '/<developmentOnly>(.*)<\/developmentOnly>/s');
+define('PAAU_DEV_ONLY_PATTERN', '/<developmentOnly>(.*)<\/developmentOnly>/sU');
