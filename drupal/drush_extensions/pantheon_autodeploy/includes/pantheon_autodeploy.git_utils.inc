@@ -103,7 +103,7 @@ function _pantheon_autodeploy_git_status($working_repo_path) {
  */
 function _pantheon_autodeploy_git_add_all($working_repo_path) {
   $command_prefix = PAAU_GIT_WITH_REPO_PATTERN . ' ';
-  $add_command    = $command_prefix . 'add %1$s';
+  $add_command    = $command_prefix . 'add -A %1$s';
 
   if (!drush_shell_exec($add_command, $working_repo_path)) {
     throw new DrushException(
