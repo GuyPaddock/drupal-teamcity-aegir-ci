@@ -352,9 +352,10 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_
                                             $target_environment) {
   $site_repo_path  = pantheon_autodeploy_checkout_site($site_id);
 
-  pantheon_autodeploy_prune_target($site_repo_path, $profile_name);
+  pantheon_autodeploy_prune_target_before_copy($site_repo_path, $profile_name);
   pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
   pantheon_autodeploy_strip_development_modules($site_repo_path, $profile_name);
+  pantheon_autodeploy_prune_target_after_copy($site_repo_path, $profile_name);
 
   $profile_version =
     pantheon_autodeploy_get_profile_version($profile_name);
@@ -402,7 +403,8 @@ function pantheon_autodeploy_checkout_site($site_id) {
 }
 
 /**
- * Removes unwanted files from a checked-out copy of a Pantheon site.
+ * Removes unwanted files from a checked-out copy of a Pantheon site before
+ * copying over installation profiles.
  *
  * <p>This is typically files and/or folders under "sites/" and "profiles/" that
  * will be replaced by corresponding files from the platform being copied.</p>
@@ -413,10 +415,12 @@ function pantheon_autodeploy_checkout_site($site_id) {
  * @param string $profile_name
  *   The machine name of the installation profile being deployed.
  */
-function pantheon_autodeploy_prune_target($site_repo_path, $profile_name) {
+function pantheon_autodeploy_prune_target_before_copy($site_repo_path, $profile_name) {
   $profile_path = sprintf('%s/profiles/%s', $site_repo_path, $profile_name);
 
-  drush_log(dt('Pruning unwanted files from the site work tree path.'));
+  drush_log(
+    dt('Pruning unwanted files from the site work tree path, before install profile has been copied.'));
+
   _pantheon_autodeploy_force_delete_dir($profile_path);
 
   drush_log(
@@ -538,11 +542,54 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
 
   drush_log(
     dt('Stripping development-only information out of profile info files.'));
+
   _pantheon_autodeploy_remove_dev_only_info($profile_info_path);
 
   drush_log(
     dt('Development-only modules and dependencies stripped from platform.'),
     'success');
+}
+
+/**
+ * Removes unwanted files from a checked-out copy of a Pantheon site after
+ * copying over installation profiles.
+ *
+ * <p>This is typically files that should not be checked-in.</p>
+ *
+ * @param string $site_repo_path
+ *   The absolute path to the location where the Pantheon site has been
+ *   checked-out.
+ * @param string $profile_name
+ *   The machine name of the installation profile being deployed.
+ */
+function pantheon_autodeploy_prune_target_after_copy($site_repo_path, $profile_name) {
+  $profile_path =
+    sprintf("%s/profiles/%s", $site_repo_path, $profile_name);
+
+  drush_log(
+    dt('Pruning unwanted files from the site work tree path, after install profile has been copied.'));
+
+  $unwanted_files =
+    drush_scan_directory(
+      $profile_path,      // $dir
+      '/^\.gitignore$/',  // $mask
+      array('.', '..'),   // $nomask
+      0,                  // $callback
+      TRUE,               // $recurse_max_depth,
+      'filename',         // $key,
+      0,                  // $min_depth
+      TRUE                // $include_dot_files
+    );
+
+  foreach ($unwanted_files as $file) {
+    $filename = $file->filename;
+
+    drush_log(dt('Removing `@file`.', array('@file' => $filename)));
+    unlink($filename);
+  }
+
+  drush_log(
+    dt('Unwanted files from site work tree have been pruned.'), 'success');
 }
 
 /**
@@ -821,7 +868,7 @@ function _pantheon_autodeploy_get_source_files($profile_name) {
       '..',
       '.git',
       'sites',
-      'profiles',
+      'profiles', // Copied separately.
     );
 
   $files_to_copy =
