@@ -4,12 +4,36 @@
 set -e;
 set -u;
 
-export HOME=/opt/teamcity;
-export PATH="$HOME/.rbenv/bin:$PATH";
+export HOME="/opt/teamcity";
+export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/plugins/ruby-build/bin:$PATH";
+
+export NODEJS_VERSION="%nodejs.version%"
+export NVM_DIR="${HOME}/.nvm"
+
 eval "$(rbenv init -)";
-export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH";
 
 sass_themes=`find . -maxdepth 4 -type d -path './themes/custom/*/sass' -exec dirname '{}' ';'`;
+
+# Initialize NVM, if available.
+if [ -s "${NVM_DIR}/nvm.sh" ]; then
+  # BUGBUG: NVM's own scripts use unbound variables :(
+  set +u;
+
+  echo "Initializing NVM..."
+  source "${NVM_DIR}/nvm.sh";
+
+  echo "Setting-up NodeJS..."
+  nvm install "${NODEJS_VERSION}";
+
+  # Install our required tooling
+  if [ ! -x "$(command -v npm-cache)" ]; then
+    echo "Installing required global packages..."
+    npm install -g grunt gulp npm-cache;
+  fi;
+
+  # Back to fail-fast behavior
+  set -u;
+fi;
 
 if [ -z "$sass_themes" ]; then
   echo "Skipping SASS compilation; no SASS themes were detected in the installation profile.";
@@ -38,19 +62,19 @@ else
         echo "Using the default Ruby version '${selected_ruby_version}'";
       fi;
 
-      rbenv install --skip-existing "$selected_ruby_version";
+      rbenv install --skip-existing "${selected_ruby_version}";
       bundle install;
-      npm install;
+      npm-cache install npm;
 
       grunt -no-color compass;
 
     elif [ -f "gulpfile.js" ]; then
       echo "Using the libSass compiler with Gulp.";
 
-      npm install;
+      npm-cache install npm;
 
-      # Compile the Sass
-      gulp sass:dev;
+      # Compile the Sass (+ CoffeeScript, if available)
+      gulp all:dev || gulp sass:dev;
 
       # Now, generate docs if we have them.
       gulp sass:doc || true;
@@ -58,9 +82,9 @@ else
       echo "Unable to detect either Ruby SASS or Gulp-based libSass compilation" >&2;
     fi;
 
-    # Clean-up artifacts from the theme build
+    # Clean-up temporary artifacts from the theme build
     rm -rf .sass-cache;
-    rm -rf node-modules;
+    rm -rf node_modules;
 
     # Switch back to original path before moving on to the next theme.
     cd $starting_path;
