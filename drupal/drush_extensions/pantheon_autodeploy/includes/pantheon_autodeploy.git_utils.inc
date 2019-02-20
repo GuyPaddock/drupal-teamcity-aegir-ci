@@ -47,6 +47,7 @@ function _pantheon_autodeploy_git_clone_to_temporary_directory($uri,
   $clone_command =
     'git clone' .
     ' --config core.autocrlf=input'.
+    ' --config core.filemode=false'.
     ' %s %s';
 
   if ($branch !== NULL) {
