@@ -4,7 +4,8 @@
  *   Pantheon Terminus-related utility methods for the Drush Auto-deploy
  *   extension for the Drupal Shell (Drush).
  *
- *   Copyright (C) 2015-2017  Red Bottle Design, LLC
+ *   Copyright (C) 2015-2017  Red Bottle Design, LLC.
+ *   Copyright (c) 2019 Inveniem.
  *
  *   This program is free software: you can redistribute it and/or modify it
  *   under the terms of the GNU General Public License as published by the Free
@@ -19,7 +20,7 @@
  *   You should have received a copy of the GNU General Public License along
  *   with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Guy Paddock (guy@redbottledesign.com)
+ * @author Guy Elsmore-Paddock (guy@inveniem.com)
  */
 
 /**
@@ -27,38 +28,44 @@
  *
  * @param string $site_id
  *   The UUID for the site that is to be deployed.
- * @param string $environment
- *   The name of the environment to which the site is to be deployed. Must
- *   be either "test" or "live".
+ * @param string $target_environment
+ *   The name of the environment to which the site is to be deployed. Must be
+ *   one of the valid environments for the target site.
  * @param string $message
  *   The message ("note") to leave in the Pantheon deployment log.
  *
  * @throws DrushException
  *   If an error occurs while interacting with Terminus.
  */
-function _pantheon_autodeploy_pantheon_deploy_site($site_id, $environment, $message) {
-  _pantheon_autodeploy_validate_pantheon_environment($environment);
+function _pantheon_autodeploy_pantheon_deploy_site($site_id,
+                                                   $target_environment,
+                                                   $message) {
+  _pantheon_autodeploy_ensure_pantheon_authenticated();
 
-  // We silently ignore "dev" because pushing via GIT accomplishes this
-  // automatically.
-  if ($environment != 'dev') {
-    _pantheon_autodeploy_ensure_pantheon_authenticated();
+  // This Terminus command works with the name of the site instead of UUID
+  $site_name = _pantheon_autodeploy_pantheon_site_id_to_name($site_id);
 
-    // Terminus works with the name of the site instead of UUID
-    $site_name      = _pantheon_autodeploy_pantheon_site_id_to_name($site_id);
-    $deploy_command = 'terminus site deploy --site=%s --env=%s --note=%s --cc';
+  $deploy_command =
+    'terminus env:deploy %s.%s --no-interaction --cc --note=%s';
 
-    if (!drush_shell_exec($deploy_command, $site_name, $environment, $message)) {
-      throw new DrushException(
-        'AUTODEPLOY_SITE_DEPLOY_FAILED',
-        dt('Failed to deploy Pantheon site `@site_name` (@site_id) to `@environment`: @output',
-          array(
-            '@site_name'    => $site_name,
-            '@site_id'      => $site_id,
-            '@environment'  => $environment,
-            '@output'       => _pantheon_autodeploy_get_shell_output(),
-          )));
-    }
+  $success =
+    drush_shell_exec(
+      $deploy_command,
+      $site_name,
+      $target_environment,
+      $message
+    );
+
+  if (!$success) {
+    throw new DrushException(
+      'AUTODEPLOY_SITE_DEPLOY_FAILED',
+      dt('Failed to deploy Pantheon site `@site_name` (@site_id) to `@environment`: @output',
+        array(
+          '@site_name'    => $site_name,
+          '@site_id'      => $site_id,
+          '@environment'  => $target_environment,
+          '@output'       => _pantheon_autodeploy_get_shell_output(),
+        )));
   }
 }
 
@@ -139,9 +146,10 @@ function _pantheon_autodeploy_pantheon_get_site_map() {
   if (empty($id_to_name_map)) {
     _pantheon_autodeploy_ensure_pantheon_authenticated();
 
-    // $1 => Name
-    // $2 => UUID
-    $site_list_command = 'terminus sites list | awk \'{ print $1 "," $2; }\'';
+    // Name,UUID
+    // We are skipping the header row.
+    $site_list_command =
+      'terminus site:list --format=csv --fields=name,id | tail +2';
 
     if (!drush_shell_exec($site_list_command)) {
       throw new DrushException(
@@ -181,7 +189,7 @@ function _pantheon_autodeploy_ensure_pantheon_authenticated() {
   static $authenticated = FALSE;
 
   if (!$authenticated) {
-    $authenticate_command = 'terminus auth login';
+    $authenticate_command = 'terminus auth:login';
 
     if (!drush_shell_exec($authenticate_command)) {
       throw new DrushException(
