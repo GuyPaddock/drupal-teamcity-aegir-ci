@@ -70,6 +70,42 @@ function _pantheon_autodeploy_pantheon_deploy_site($site_id,
 }
 
 /**
+ * Determine if a name is a valid multi-dev environment for the specified site.
+ *
+ * @param string $site_id
+ *   The UUID of the site.
+ * @param string $target_environment
+ *   The name of the environment in question.
+ *
+ * @return bool
+ *   TRUE if the environment is considered a multi-dev environment for the
+ *   specified site; FALSE if the environment is a standard Pantheon environment
+ *   for the specified site (dev, test, live).
+ *
+ * @throws DrushException
+ *   If Terminus cannot retrieve environment information for the specified site.
+ * @throws InvalidArgumentException
+ *   If the given value does not represent the name of any environment for the
+ *   specified site.
+ */
+function _pantheon_autodeploy_pantheon_is_multidev($site_id,
+                                                   $target_environment) {
+  $standard_environments =
+    array(
+      PAAU_PANTHEON_ENV_DEV,
+      PAAU_PANTHEON_ENV_TEST,
+      PAAU_PANTHEON_ENV_LIVE,
+    );
+
+  _pantheon_autodeploy_validate_pantheon_environment(
+    $site_id,
+    $target_environment
+  );
+
+  return !in_array($target_environment, $standard_environments);
+}
+
+/**
  * Maps a Pantheon site name to a Pantheon site UUID.
  *
  * @param string $site_name
@@ -128,6 +164,34 @@ function _pantheon_autodeploy_pantheon_site_id_to_name($site_id) {
 }
 
 /**
+ * Validates that a given string is a valid Pantheon environment name.
+ *
+ * @param string $site_id
+ *   The UUID for the site for which an environment is being validated.
+ * @param string $environment
+ *   The environment name to validate.
+ *
+ * @throws DrushException
+ *   If Terminus cannot retrieve environment information for the specified site.
+ * @throws InvalidArgumentException
+ *   If the given value is not a valid environment name.
+ */
+function _pantheon_autodeploy_validate_pantheon_environment($site_id,
+                                                            $environment) {
+  $allowed_environments =
+    _pantheon_autodeploy_pantheon_get_site_environments($site_id);
+
+  if (!in_array($environment, $allowed_environments)) {
+    throw new InvalidArgumentException(
+      dt('`@name` is not a valid Pantheon environment name. Valid environments for this site are: [@types]',
+        array(
+          '@name'  => $environment,
+          '@types' => implode(', ', $allowed_environments),
+        )));
+  }
+}
+
+/**
  * Gets the map of Pantheon site IDs to site names.
  *
  * <p>For performance reasons, this list is only fetched once and then cached
@@ -176,6 +240,44 @@ function _pantheon_autodeploy_pantheon_get_site_map() {
 }
 
 /**
+ * Gets the list of environment names for a given Pantheon site ID.
+ *
+ * <p>For performance reasons, this list is only fetched once per site and then
+ * cached for the duration of the command execution.</p>
+ *
+ * @return array
+ *   An array of the environment names for the requested site.
+ *
+ * @throws DrushException
+ *   If the environment list cannot be obtained.
+ */
+function _pantheon_autodeploy_pantheon_get_site_environments($site_id) {
+  static $id_to_environment_map = array();
+
+  if (!isset($id_to_environment_map[$site_id])) {
+    _pantheon_autodeploy_ensure_pantheon_authenticated();
+
+    $env_list_command = 'terminus env:list --format=string --field=id %s';
+
+    if (!drush_shell_exec($env_list_command, $site_id)) {
+      throw new DrushException(
+        'AUTODEPLOY_SITE_ENV_LIST_FAILED',
+        dt('Failed to get Pantheon environments list: @output',
+          array(
+            '@output' => _pantheon_autodeploy_get_shell_output(),
+          )));
+    }
+
+    /* @var array $environment_list */
+    $environment_list = drush_shell_exec_output();
+
+    $id_to_environment_map[$site_id] = $environment_list;
+  }
+
+  return $id_to_environment_map[$site_id];
+}
+
+/**
  * Ensures we have a valid session through Terminus to Pantheon.
  *
  * <p>This only attempts authentication once per command run. It must be run
@@ -201,32 +303,5 @@ function _pantheon_autodeploy_ensure_pantheon_authenticated() {
     }
 
     $authenticated = TRUE;
-  }
-}
-
-/**
- * Validates that a given string is a valid Pantheon environment name.
- *
- * @param string $environment
- *   The environment name to validate.
- *
- * @throws InvalidArgumentException
- *   If the given value is not a valid environment name.
- */
-function _pantheon_autodeploy_validate_pantheon_environment($environment) {
-  $allowed_environments =
-    array(
-      PAAU_PANTHEON_ENV_DEV,
-      PAAU_PANTHEON_ENV_TEST,
-      PAAU_PANTHEON_ENV_LIVE,
-    );
-
-  if (!in_array($environment, $allowed_environments)) {
-    throw new InvalidArgumentException(
-      dt('`@name` is not a valid Pantheon environment name. Valid environments are: [@types]',
-        array(
-          '@name'  => $environment,
-          '@types' => implode(', ', $allowed_environments),
-        )));
   }
 }

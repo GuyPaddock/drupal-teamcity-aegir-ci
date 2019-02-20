@@ -54,7 +54,7 @@ function pantheon_autodeploy_drush_command() {
         dt('Triggers the auto-deploy to use settings for the specified branch in the `.info` file of the exclusive profile in the distribution, instead of taking settings from the command-line. If there are no auto-deploy settings for the branch in the .info file, this command exits gracefully. This is typically useful for CI environments.'),
 
       PAAU_OPTION_TARGET_ENV =>
-        dt('The environment on Pantheon (`dev`, `test`, or `live`) to which the site should be deployed. In the Pantheon workflow, `test` assumes `dev` and `test`; and `live` assumes `dev`, `test`, and `live`. (The default is `dev`).'),
+        dt('The environment on Pantheon to which the site should be deployed. In the Pantheon workflow, `test` assumes `dev` and `test`; and `live` assumes `dev`, `test`, and `live`. (The default is `dev`). Multi-dev is also supported.'),
 
       PAAU_OPTION_PROFILE =>
         dt('The installation profile to deploy. (The default is the `exclusive` profile in the current platform.)'),
@@ -318,7 +318,10 @@ function pantheon_autodeploy_validate_options_post_profile_load($site_id, $targe
   }
 
   if (!empty($target_environment)) {
-    _pantheon_autodeploy_validate_pantheon_environment($target_environment);
+    _pantheon_autodeploy_validate_pantheon_environment(
+      $site_id,
+      $target_environment
+    );
   }
 }
 
@@ -349,9 +352,11 @@ function pantheon_autodeploy_validate_options_post_profile_load($site_id, $targe
  * @throws DrushException
  *   If the deployment fails.
  */
-function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_commit,
+function pantheon_autodeploy_run_deployment($site_id, $profile_name,
+                                            $tag_after_commit,
                                             $target_environment) {
-  $site_repo_path  = pantheon_autodeploy_checkout_site($site_id);
+  $site_repo_path =
+    pantheon_autodeploy_checkout_site($site_id, $target_environment);
 
   pantheon_autodeploy_prune_target_before_copy($site_repo_path, $profile_name);
   pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
@@ -379,21 +384,39 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name, $tag_after_
  *
  * @param string $site_id
  *   The UUID of the target Pantheon site.
+ * @param string $target_environment
+ *   The name of the environment to which the site is to be deployed. Must be
+ *   one of the valid environments for the target site. Can be a multi-dev
+ *   environment, in which case the branch for that environment will be
+ *   checked-out before any changes are applied.
+ *
  * @return string
  *   The local path to the temporary folder where the site was checked out.
  *
  * @throws DrushException
  *   If the checkout operation fails.
  */
-function pantheon_autodeploy_checkout_site($site_id) {
+function pantheon_autodeploy_checkout_site($site_id, $target_environment) {
   $repo_url = pantheon_autodeploy_get_git_repo_url($site_id);
 
   drush_log(
     dt('Checking out site `@site_id` from Pantheon.',
       array('@site_id' => $site_id)));
 
+  $is_multidev =
+    _pantheon_autodeploy_pantheon_is_multidev($site_id, $target_environment);
+
+  if ($is_multidev) {
+    $branch_name = $target_environment;
+  } else {
+    $branch_name = NULL;
+  }
+
   $local_checkout_path =
-    _pantheon_autodeploy_git_clone_to_temporary_directory($repo_url);
+    _pantheon_autodeploy_git_clone_to_temporary_directory(
+      $repo_url,
+      $branch_name
+    );
 
   drush_log(
     dt('Site `@site_id` checked-out from GIT.',
@@ -692,26 +715,33 @@ function pantheon_autodeploy_commit_and_push_site($site_repo_path,
  *   If the deployment fails.
  */
 function pantheon_autodeploy_deploy_site($site_id, $target_environment, $message) {
-  $deployments_needed = array();
+  _pantheon_autodeploy_validate_pantheon_environment(
+    $site_id,
+    $target_environment
+  );
 
-  $requires_test_deployment = array(PAAU_PANTHEON_ENV_TEST, PAAU_PANTHEON_ENV_LIVE);
-  $requires_live_deployment = array(PAAU_PANTHEON_ENV_LIVE);
+  // NOTE: We silently ignore "dev" and multi-dev because pushing via GIT
+  // accomplishes this automatically.
+  $dependencies = array(
+    PAAU_PANTHEON_ENV_TEST =>
+      array(PAAU_PANTHEON_ENV_TEST),
 
-  if (in_array($target_environment, $requires_test_deployment)) {
-    $deployments_needed[] = PAAU_PANTHEON_ENV_TEST;
-  }
+    PAAU_PANTHEON_ENV_LIVE =>
+      array(PAAU_PANTHEON_ENV_TEST, PAAU_PANTHEON_ENV_LIVE),
+  );
 
-  if (in_array($target_environment, $requires_live_deployment)) {
-    $deployments_needed[] = PAAU_PANTHEON_ENV_LIVE;
-  }
-
-  if (empty($deployments_needed)) {
+  if (!isset($dependencies[$target_environment])) {
     drush_log(
-      dt('No deployment necessary -- GIT already pushed `@site_id` to the dev environment.',
-        array('@site_id' => $site_id)),
+      dt('No deployment necessary -- pushing `@site_id` via GIT already pushed code to the `@environment` environment.',
+        array(
+          '@site_id'      => $site_id,
+          '@environment'  => $target_environment,
+        )
+      ),
       'success');
-  }
-  else {
+  } else {
+    $deployments_needed = $dependencies[$target_environment];
+
     foreach ($deployments_needed as $deployment) {
       drush_log(
         dt('Deploying `@site_id` to `@environment`.',
@@ -719,7 +749,11 @@ function pantheon_autodeploy_deploy_site($site_id, $target_environment, $message
             '@site_id'     => $site_id,
             '@environment' => $deployment)));
 
-      _pantheon_autodeploy_pantheon_deploy_site($site_id, $deployment, $message);
+      _pantheon_autodeploy_pantheon_deploy_site(
+        $site_id,
+        $deployment,
+        $message
+      );
 
       drush_log(
         dt('Site deployed to the `@environment` on Pantheon.',

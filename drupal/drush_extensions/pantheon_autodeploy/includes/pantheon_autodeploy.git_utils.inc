@@ -31,9 +31,8 @@
  *
  * @param string $uri
  *   The URI to the GIT repository to clone.
- * @param boolean $checkout_head
- *   Whether or not to checkout all files in HEAD after the clone operation.
- *   The default is <code>TRUE</code>.
+ * @param string $branch [optional]
+ *   The name of the branch to checkout. Defaults to the repo's default branch.
  *
  * @return string
  *   The absolute path to the temporary folder where the GIT repository
@@ -42,12 +41,16 @@
  * @throws DrushException
  *   If the checkout operation fails.
  */
-function _pantheon_autodeploy_git_clone_to_temporary_directory($uri, $checkout_head = TRUE) {
+function _pantheon_autodeploy_git_clone_to_temporary_directory($uri,
+                                                               $branch = NULL) {
   $tmp_directory = drush_tempdir() . '/' . basename($uri);
-  $clone_command = 'git clone --config core.autocrlf=input %s %s';
+  $clone_command =
+    'git clone' .
+    ' --config core.autocrlf=input'.
+    ' %s %s';
 
-  if (!$checkout_head) {
-    $clone_command .= ' --no-checkout';
+  if ($branch !== NULL) {
+    $clone_command .= ' --branch ' . drush_escapeshellarg($branch);
   }
 
   if (drush_get_context('DRUSH_VERBOSE')) {
