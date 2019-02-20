@@ -5,6 +5,7 @@
  *   extension for the Drupal Shell (Drush).
  *
  *   Copyright (C) 2015-2017  Red Bottle Design, LLC
+ *   Copyright (c) 2019 Inveniem.
  *
  *   This program is free software: you can redistribute it and/or modify it
  *   under the terms of the GNU General Public License as published by the Free
@@ -19,7 +20,7 @@
  *   You should have received a copy of the GNU General Public License along
  *   with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Guy Paddock (guy@redbottledesign.com)
+ * @author Guy Elsmore-Paddock (guy@inveniem.com)
  */
 require_once('pantheon_autodeploy.platform_utils.inc');
 
@@ -197,8 +198,8 @@ function _pantheon_autodeploy_get_settings_for($profile_name, $branch) {
         array_replace_recursive($system_defaults, $profile_defaults, $result);
 
       drush_log(
-        dt('Using branch settings: @settings',
-          array('@settings' => var_export($result, TRUE))));
+        dt('Using branch settings: !settings',
+          array('!settings' => var_export($result, TRUE))));
     }
   }
 
