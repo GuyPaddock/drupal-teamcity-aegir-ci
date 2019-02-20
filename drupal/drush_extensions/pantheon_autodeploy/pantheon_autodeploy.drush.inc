@@ -355,8 +355,10 @@ function pantheon_autodeploy_validate_options_post_profile_load($site_id, $targe
 function pantheon_autodeploy_run_deployment($site_id, $profile_name,
                                             $tag_after_commit,
                                             $target_environment) {
-  $site_repo_path =
-    pantheon_autodeploy_checkout_site($site_id, $target_environment);
+  $target_branch =
+    pantheon_autodeploy_get_environment_branch($site_id, $target_environment);
+
+  $site_repo_path = pantheon_autodeploy_checkout_site($site_id, $target_branch);
 
   pantheon_autodeploy_prune_target_before_copy($site_repo_path, $profile_name);
   pantheon_autodeploy_copy_profile($profile_name, $site_repo_path);
@@ -371,7 +373,12 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name,
 
   $files_were_committed =
     pantheon_autodeploy_commit_and_push_site(
-      $site_repo_path, $commit_message, $profile_version, $tag_after_commit);
+      $site_repo_path,
+      $commit_message,
+      $profile_version,
+      $target_branch,
+      $tag_after_commit
+    );
 
   if ($files_were_committed) {
     pantheon_autodeploy_deploy_site(
@@ -380,8 +387,6 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name,
 }
 
 /**
- * Checks-out the GIT repository for the Pantheon site.
- *
  * @param string $site_id
  *   The UUID of the target Pantheon site.
  * @param string $target_environment
@@ -390,27 +395,51 @@ function pantheon_autodeploy_run_deployment($site_id, $profile_name,
  *   environment, in which case the branch for that environment will be
  *   checked-out before any changes are applied.
  *
- * @return string
- *   The local path to the temporary folder where the site was checked out.
+ * @return
+ *   The name of the branch that contains code for the specified environment.
  *
  * @throws DrushException
- *   If the checkout operation fails.
+ *   If Terminus cannot retrieve environment information for the specified site.
+ * @throws InvalidArgumentException
+ *   If the given value does not represent the name of any environment for the
+ *   specified site.
  */
-function pantheon_autodeploy_checkout_site($site_id, $target_environment) {
-  $repo_url = pantheon_autodeploy_get_git_repo_url($site_id);
-
-  drush_log(
-    dt('Checking out site `@site_id` from Pantheon.',
-      array('@site_id' => $site_id)));
-
+function pantheon_autodeploy_get_environment_branch($site_id,
+                                                    $target_environment) {
   $is_multidev =
     _pantheon_autodeploy_pantheon_is_multidev($site_id, $target_environment);
 
   if ($is_multidev) {
     $branch_name = $target_environment;
   } else {
-    $branch_name = NULL;
+    $branch_name = "master";
   }
+
+  return $branch_name;
+}
+
+/**
+ * Checks-out the GIT repository for the Pantheon site.
+ *
+ * @param string $site_id
+ *   The UUID of the target Pantheon site.
+ * @param string $branch_name
+ *   The name of the code branch to checkout. This is usually `master` for all
+ *   "standard" Pantheon environments, or a branch that has the same name as the
+ *   multi-dev environment for multi-dev.
+ *
+ * @return string
+ *   The local path to the temporary folder where the site was checked out.
+ *
+ * @throws DrushException
+ *   If the checkout operation fails.
+ */
+function pantheon_autodeploy_checkout_site($site_id, $branch_name = "master") {
+  $repo_url = pantheon_autodeploy_get_git_repo_url($site_id);
+
+  drush_log(
+    dt('Checking out site `@site_id` from Pantheon.',
+      array('@site_id' => $site_id)));
 
   $local_checkout_path =
     _pantheon_autodeploy_git_clone_to_temporary_directory(
@@ -419,8 +448,11 @@ function pantheon_autodeploy_checkout_site($site_id, $target_environment) {
     );
 
   drush_log(
-    dt('Site `@site_id` checked-out from GIT.',
-      array('@site_id' => $site_id)),
+    dt('Branch `@branch` of site `@site_id` checked-out from GIT.',
+      array(
+        '@branch'  => $branch_name,
+        '@site_id' => $site_id,
+      )),
     'success');
 
   return $local_checkout_path;
@@ -439,7 +471,8 @@ function pantheon_autodeploy_checkout_site($site_id, $target_environment) {
  * @param string $profile_name
  *   The machine name of the installation profile being deployed.
  */
-function pantheon_autodeploy_prune_target_before_copy($site_repo_path, $profile_name) {
+function pantheon_autodeploy_prune_target_before_copy($site_repo_path,
+                                                      $profile_name) {
   $profile_path = sprintf('%s/profiles/%s', $site_repo_path, $profile_name);
 
   drush_log(
@@ -627,6 +660,10 @@ function pantheon_autodeploy_prune_target_after_copy($site_repo_path, $profile_n
  *   checked-out.
  * @param string $commit_message
  *   The message to use for commits and tags.
+ * @param string $branch
+ *   The name of the code branch to push. This is usually `master` for all
+ *   "standard" Pantheon environments, or a branch that has the same name as the
+ *   multi-dev environment for multi-dev.
  * @param string $profile_version
  *   The version number of the profile, in Drupal's standard format of
  *   "7.x-1.0", for use by tags. Can be <code>NULL</code> if
@@ -646,6 +683,7 @@ function pantheon_autodeploy_prune_target_after_copy($site_repo_path, $profile_n
 function pantheon_autodeploy_commit_and_push_site($site_repo_path,
                                                   $commit_message,
                                                   $profile_version,
+                                                  $branch,
                                                   $tag_after_commit) {
   if ($tag_after_commit && empty($profile_version)) {
     throw new InvalidArgumentException(
@@ -690,7 +728,7 @@ function pantheon_autodeploy_commit_and_push_site($site_repo_path,
         $commit_message);
     }
 
-    _pantheon_autodeploy_git_push($site_repo_path);
+    _pantheon_autodeploy_git_push($site_repo_path, 'origin', $branch);
 
     $committed = TRUE;
 
