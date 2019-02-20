@@ -3,7 +3,8 @@
  * @file
  *   Code for the Drush Auto-deploy extension for the Drupal Shell (Drush).
  *
- *   Copyright (C) 2015-2017  Red Bottle Design, LLC
+ *   Copyright (c) 2015-2017 Red Bottle Design, LLC
+ *   Copyright (c) 2019 Inveniem.
  *
  *   This program is free software: you can redistribute it and/or modify it
  *   under the terms of the GNU General Public License as published by the Free
@@ -18,7 +19,7 @@
  *   You should have received a copy of the GNU General Public License along
  *   with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Guy Paddock (guy@redbottledesign.com)
+ * @author Guy Elsmore-Paddock (guy@inveniem.com)
  */
 require_once('pantheon_autodeploy.constants.inc');
 
@@ -554,7 +555,7 @@ function pantheon_autodeploy_strip_development_modules($site_repo_path, $profile
  * Removes unwanted files from a checked-out copy of a Pantheon site after
  * copying over installation profiles.
  *
- * <p>This is typically files that should not be checked-in.</p>
+ * <p>These are typically files that should never be checked-in.</p>
  *
  * @param string $site_repo_path
  *   The absolute path to the location where the Pantheon site has been
@@ -867,6 +868,7 @@ function _pantheon_autodeploy_get_source_files($profile_name) {
       '.',
       '..',
       '.git',
+      '.gitignore',
       'sites',
       'profiles', // Copied separately.
     );
