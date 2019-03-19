@@ -39,7 +39,7 @@ performing deployments (i.e. `teamcity`):
 - [Drush](http://www.drush.org/en/master/) (of course)
 - [GIT](https://git-scm.com/)
 - [Pantheon Terminus CLI](https://github.com/pantheon-systems/terminus)
-   (Pantheon Auto-deploy was tested with version 0.13.6).
+  (Pantheon Auto-deploy has been tested with version 1.9.x and 2.0.0).
 
 Additionally, ensure that you:
 1. Have configured SSH key-based authentication for accessing the site's
