@@ -235,7 +235,15 @@ function _pantheon_autodeploy_parse_dev_only_info($info_file_path) {
   $matches = array();
 
   if (preg_match(PAAU_DEV_ONLY_PATTERN, $info_data, $matches)) {
-    $result = _drush_drupal_parse_info_file($matches[1]);
+    $info_extract = $matches[1];
+
+    // Workaround dev-only passages/sections of the info file that contain ONLY
+    // comment lines.
+    //
+    // See: https://github.com/drush-ops/drush/issues/4005
+    $info_extract .= PHP_EOL . '_placeholder=1';
+
+    $result = _drush_drupal_parse_info_file($info_extract);
 
     if ($result === FALSE) {
       throw new DrushException(
